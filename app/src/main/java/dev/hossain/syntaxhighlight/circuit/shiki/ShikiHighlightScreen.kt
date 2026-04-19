@@ -92,6 +92,7 @@ data object ShikiHighlightScreen : Screen {
             override val availableSamples: List<CodeSample>,
             override val availableThemePairs: List<ThemePair>,
             val response: HighlightDualResponse,
+            val requestDurationMs: Long,
             override val eventSink: (Event) -> Unit,
         ) : State
 
@@ -146,20 +147,24 @@ class ShikiHighlightPresenter
             var selectedSample by rememberRetained { mutableStateOf(CodeSamples.all.first()) }
             var selectedThemePair by rememberRetained { mutableStateOf(defaultThemePairs.first()) }
             var response by rememberRetained { mutableStateOf<HighlightDualResponse?>(null) }
+            var requestDurationMs by rememberRetained { mutableStateOf(0L) }
             var errorMessage by rememberRetained { mutableStateOf<String?>(null) }
             var retryTrigger by rememberRetained { mutableStateOf(0) }
 
             LaunchedEffect(selectedSample, selectedThemePair, retryTrigger) {
                 response = null
                 errorMessage = null
+                val startMs = System.currentTimeMillis()
                 shikiRepository
                     .highlightDual(
                         code = selectedSample.code,
                         language = selectedSample.language,
                         darkTheme = selectedThemePair.dark,
                         lightTheme = selectedThemePair.light,
-                    ).onSuccess { response = it }
-                    .onFailure { errorMessage = it.message ?: "Unknown error" }
+                    ).onSuccess {
+                        requestDurationMs = System.currentTimeMillis() - startMs
+                        response = it
+                    }.onFailure { errorMessage = it.message ?: "Unknown error" }
             }
 
             val eventSink: (ShikiHighlightScreen.Event) -> Unit = { event ->
@@ -208,6 +213,7 @@ class ShikiHighlightPresenter
                         availableSamples = CodeSamples.all,
                         availableThemePairs = defaultThemePairs,
                         response = response!!,
+                        requestDurationMs = requestDurationMs,
                         eventSink = common.third,
                     )
                 }
@@ -291,17 +297,50 @@ fun ShikiHighlight(
                 }
 
                 is ShikiHighlightScreen.State.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = state.message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { state.eventSink(ShikiHighlightScreen.Event.Retry) }) {
+                            Text("Retry")
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Plain text (highlighting unavailable)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp),
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        SelectionContainer(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = state.message,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(16.dp),
+                                text = state.selectedSample.code,
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 13.sp,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .horizontalScroll(rememberScrollState())
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(12.dp),
                             )
-                            Button(onClick = { state.eventSink(ShikiHighlightScreen.Event.Retry) }) {
-                                Text("Retry")
-                            }
                         }
                     }
                 }
@@ -316,21 +355,29 @@ fun ShikiHighlight(
                         remember(state.response, isDark) {
                             resolveBackgroundColor(state.response, isDark)
                         }
-                    SelectionContainer {
-                        Text(
-                            text = annotated,
-                            style =
-                                MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 13.sp,
-                                ),
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(bgColor)
-                                    .horizontalScroll(rememberScrollState())
-                                    .verticalScroll(rememberScrollState())
-                                    .padding(12.dp),
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        SelectionContainer(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = annotated,
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 13.sp,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(bgColor)
+                                        .horizontalScroll(rememberScrollState())
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(12.dp),
+                            )
+                        }
+                        HorizontalDivider()
+                        MetricsRow(
+                            durationMs = state.requestDurationMs,
+                            code = state.selectedSample.code,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
                         )
                     }
                 }
@@ -342,6 +389,36 @@ fun ShikiHighlight(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+@Composable
+private fun MetricsRow(
+    durationMs: Long,
+    code: String,
+    modifier: Modifier = Modifier,
+) {
+    val lines = code.lines().size
+    val chars = code.length
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = "⏱ ${durationMs}ms",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = "↕ $lines lines",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = "∑ $chars chars",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
 
 private fun buildAnnotatedStringFromDualResponse(
     response: HighlightDualResponse,
