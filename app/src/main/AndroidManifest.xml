@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".CircuitApp"
+        android:name=".SyntaxHighlightApp"
         android:appComponentFactory=".di.ComposeAppComponentFactory"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

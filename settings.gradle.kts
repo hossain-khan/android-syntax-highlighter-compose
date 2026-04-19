@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Circuit App Template"
+rootProject.name = "Syntax Highlight"
 include(":app")
