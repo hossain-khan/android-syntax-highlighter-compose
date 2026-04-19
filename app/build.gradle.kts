@@ -129,6 +129,9 @@ dependencies {
 
     implementation(libs.androidx.work)
 
+    // Shiki Token Service SDK - server-driven syntax highlighting
+    implementation(libs.shiki.sdk)
+
     // Networking
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)

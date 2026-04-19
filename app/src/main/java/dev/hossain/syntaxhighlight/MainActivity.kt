@@ -15,7 +15,7 @@ import com.slack.circuit.foundation.rememberCircuitNavigator
 import com.slack.circuit.overlay.ContentWithOverlays
 import com.slack.circuit.sharedelements.SharedElementTransitionLayout
 import com.slack.circuitx.gesturenavigation.GestureNavigationDecorationFactory
-import dev.hossain.syntaxhighlight.circuit.InboxScreen
+import dev.hossain.syntaxhighlight.circuit.home.HomeScreen
 import dev.hossain.syntaxhighlight.di.ActivityKey
 import dev.hossain.syntaxhighlight.ui.theme.SyntaxHighlightAppTheme
 import dev.zacsweers.metro.AppScope
@@ -58,7 +58,7 @@ class MainActivity
             setContent {
                 SyntaxHighlightAppTheme {
                     // See https://slackhq.github.io/circuit/navigation/
-                    val navStack = rememberSaveableNavStack(root = InboxScreen)
+                    val navStack = rememberSaveableNavStack(root = HomeScreen)
                     val navigator = rememberCircuitNavigator(navStack)
 
                     // See https://slackhq.github.io/circuit/circuit-content/
