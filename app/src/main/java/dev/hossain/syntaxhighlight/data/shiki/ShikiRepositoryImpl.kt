@@ -1,11 +1,16 @@
 package dev.hossain.syntaxhighlight.data.shiki
 
+import android.util.Log
 import dev.hossain.shiki.ShikiClient
 import dev.hossain.shiki.model.HighlightDualRequest
 import dev.hossain.shiki.model.HighlightDualResponse
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.SingleIn
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
 
 private const val SHIKI_BASE_URL = "https://syntax-highlight.gohk.xyz"
 
@@ -22,7 +27,23 @@ private const val SHIKI_BASE_URL = "https://syntax-highlight.gohk.xyz"
 @ContributesBinding(AppScope::class)
 class ShikiRepositoryImpl
     constructor() : ShikiRepository {
-        private val client = ShikiClient(baseUrl = SHIKI_BASE_URL)
+        private val client =
+            ShikiClient(
+                baseUrl = SHIKI_BASE_URL,
+                httpClient =
+                    HttpClient {
+                        // Logs HTTP requests/responses via SLF4J → android.util.Log (logcat tag: "HttpClient")
+                        install(Logging) {
+                            logger =
+                                object : Logger {
+                                    override fun log(message: String) {
+                                        Log.v("ShikiHttp", message)
+                                    }
+                                }
+                            level = LogLevel.BODY
+                        }
+                    },
+            )
 
         override suspend fun highlightDual(
             code: String,

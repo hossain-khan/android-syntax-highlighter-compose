@@ -38,6 +38,12 @@ jcodings = "1.0.58"
 # https://github.com/google/gson
 gson = "2.11.0"
 
+# Ktor client logging for Shiki SDK (SDK uses Ktor 3.0.3 internally)
+# https://ktor.io/docs/client-logging.html
+ktor = "3.0.3"
+# SLF4J Android bridge - routes Ktor's SLF4J log calls to android.util.Log / logcat
+slf4j-android = "1.7.36"
+
 # Kotlin linter with built-in formatter
 # https://github.com/jeremymailen/kotlinter-gradle
 # https://github.com/pinterest/ktlint
@@ -97,6 +103,11 @@ androidx-work = { group = "androidx.work", name = "work-runtime-ktx", version.re
 # Shiki Token Service SDK - server-driven syntax highlighting
 # https://github.com/hossain-khan/shiki-token-service/blob/main/sdk/README.md
 shiki-sdk = { group = "com.github.hossain-khan.shiki-token-service", name = "sdk-android", version = "sdk-1.0.5" }
+
+# Ktor logging plugin + SLF4J Android bridge (for Shiki SDK HTTP logging)
+# https://ktor.io/docs/client-logging.html
+ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+slf4j-android = { group = "org.slf4j", name = "slf4j-android", version.ref = "slf4j-android" }
 
 # kotlin-textmate transitive dependencies (required by core.jar local library)
 # https://github.com/ivan-magda/kotlin-textmate
