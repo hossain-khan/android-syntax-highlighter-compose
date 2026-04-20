@@ -1,5 +1,6 @@
 package dev.hossain.syntaxhighlight.circuit.shiki
 
+import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -37,10 +39,13 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -66,6 +71,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -247,6 +253,8 @@ fun ShikiHighlight(
     state: ShikiHighlightScreen.State,
     modifier: Modifier = Modifier,
 ) {
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -258,6 +266,22 @@ fun ShikiHighlight(
                             painter = painterResource(id = R.drawable.arrow_back_24dp),
                             contentDescription = "Back",
                         )
+                    }
+                },
+                actions = {
+                    if (state is ShikiHighlightScreen.State.Success) {
+                        IconButton(onClick = {
+                            coroutineScope.launch {
+                                clipboard.setClipEntry(
+                                    ClipEntry(ClipData.newPlainText("code", state.selectedSample.code)),
+                                )
+                            }
+                        }) {
+                            Icon(
+                                painter = painterResource(R.drawable.content_copy_24dp),
+                                contentDescription = "Copy code",
+                            )
+                        }
                     }
                 },
             )
@@ -313,6 +337,11 @@ fun ShikiHighlight(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(onClick = { state.eventSink(ShikiHighlightScreen.Event.Retry) }) {
+                            Icon(
+                                painter = painterResource(R.drawable.refresh_24dp),
+                                contentDescription = null,
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text("Retry")
                         }
                         Spacer(modifier = Modifier.height(12.dp))

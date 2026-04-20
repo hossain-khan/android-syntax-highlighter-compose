@@ -2,15 +2,19 @@ package dev.hossain.syntaxhighlight.circuit.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -18,7 +22,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.runtime.CircuitUiEvent
@@ -26,6 +32,7 @@ import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
+import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.circuit.shiki.ShikiHighlightScreen
 import dev.hossain.syntaxhighlight.circuit.textmate.TextMateHighlightScreen
 import dev.zacsweers.metro.AppScope
@@ -73,6 +80,7 @@ class HomePresenter
 private data class HighlightApproach(
     val title: String,
     val subtitle: String,
+    val iconRes: Int,
     val event: HomeScreen.Event,
 )
 
@@ -91,6 +99,7 @@ fun Home(
                     "Server-driven tokenization via Shiki Token Service. " +
                         "Code is sent to the backend which returns colored tokens; " +
                         "the app builds an AnnotatedString and renders it natively.",
+                iconRes = R.drawable.cloud_24dp,
                 event = HomeScreen.Event.OpenShikiHighlight,
             ),
             HighlightApproach(
@@ -98,6 +107,7 @@ fun Home(
                 subtitle =
                     "On-device tokenization using TextMate grammars and VS Code themes. " +
                         "No network required — grammars and themes are bundled in the app assets.",
+                iconRes = R.drawable.cloud_off_24dp,
                 event = HomeScreen.Event.OpenTextMateHighlight,
             ),
         )
@@ -146,11 +156,20 @@ private fun ApproachCard(
             ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = approach.title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(approach.iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = approach.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = approach.subtitle,

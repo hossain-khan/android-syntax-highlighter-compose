@@ -1,5 +1,6 @@
 package dev.hossain.syntaxhighlight.circuit.textmate
 
+import android.content.ClipData
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -37,10 +38,13 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -66,6 +70,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlin.time.measureTimedValue
@@ -231,6 +236,8 @@ fun TextMateHighlight(
     state: TextMateHighlightScreen.State,
     modifier: Modifier = Modifier,
 ) {
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -246,19 +253,36 @@ fun TextMateHighlight(
                 },
                 actions = {
                     if (state is TextMateHighlightScreen.State.Ready) {
+                        IconButton(onClick = {
+                            coroutineScope.launch {
+                                clipboard.setClipEntry(
+                                    ClipEntry(ClipData.newPlainText("code", state.selectedSample.code)),
+                                )
+                            }
+                        }) {
+                            Icon(
+                                painter = painterResource(R.drawable.content_copy_24dp),
+                                contentDescription = "Copy code",
+                            )
+                        }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(end = 8.dp),
                         ) {
-                            Text(
-                                text = if (state.isDark) "Dark" else "Light",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(end = 4.dp),
+                            Icon(
+                                painter = painterResource(R.drawable.light_mode_24dp),
+                                contentDescription = "Light mode",
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
                             Switch(
                                 checked = state.isDark,
                                 onCheckedChange = { state.eventSink(TextMateHighlightScreen.Event.ToggleTheme) },
+                                modifier = Modifier.padding(horizontal = 4.dp),
+                            )
+                            Icon(
+                                painter = painterResource(R.drawable.dark_mode_24dp),
+                                contentDescription = "Dark mode",
+                                tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
