@@ -132,6 +132,12 @@ dependencies {
     // Shiki Token Service SDK - server-driven syntax highlighting
     implementation(libs.shiki.sdk)
 
+    // kotlin-textmate - local on-device syntax highlighting (core JAR + compose-ui AAR)
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
+    implementation(libs.textmate.joni)
+    implementation(libs.textmate.jcodings)
+    implementation(libs.textmate.gson)
+
     // Networking
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)

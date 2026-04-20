@@ -33,6 +33,11 @@ kotlinxSerializationJson = "1.11.0"
 # https://github.com/JakeWharton/retrofit2-kotlinx-serialization-converter
 retrofitKotlinxSerializationConverter = "1.0.0"
 
+joni = "2.2.1"
+jcodings = "1.0.58"
+# https://github.com/google/gson
+gson = "2.11.0"
+
 # Kotlin linter with built-in formatter
 # https://github.com/jeremymailen/kotlinter-gradle
 # https://github.com/pinterest/ktlint
@@ -92,6 +97,12 @@ androidx-work = { group = "androidx.work", name = "work-runtime-ktx", version.re
 # Shiki Token Service SDK - server-driven syntax highlighting
 # https://github.com/hossain-khan/shiki-token-service/blob/main/sdk/README.md
 shiki-sdk = { group = "com.github.hossain-khan.shiki-token-service", name = "sdk-android", version = "sdk-1.0.5" }
+
+# kotlin-textmate transitive dependencies (required by core.jar local library)
+# https://github.com/ivan-magda/kotlin-textmate
+textmate-joni = { group = "org.jruby.joni", name = "joni", version.ref = "joni" }
+textmate-jcodings = { group = "org.jruby.jcodings", name = "jcodings", version.ref = "jcodings" }
+textmate-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
