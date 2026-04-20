@@ -270,6 +270,12 @@ fun ShikiHighlight(
                 },
                 actions = {
                     if (state is ShikiHighlightScreen.State.Success) {
+                        IconButton(onClick = { state.eventSink(ShikiHighlightScreen.Event.Retry) }) {
+                            Icon(
+                                painter = painterResource(R.drawable.refresh_24dp),
+                                contentDescription = "Refresh",
+                            )
+                        }
                         IconButton(onClick = {
                             coroutineScope.launch {
                                 clipboard.setClipEntry(
@@ -432,13 +438,26 @@ private fun MetricsRow(
     val chars = code.length
     Row(
         modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            text = "⏱ ${durationMs}ms",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // Cloud icon indicates this is network (server) time, not local CPU time
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.cloud_24dp),
+                contentDescription = "Network request time",
+                modifier = Modifier.height(14.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "${durationMs}ms",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
             text = "↕ $lines lines",
             style = MaterialTheme.typography.labelSmall,
