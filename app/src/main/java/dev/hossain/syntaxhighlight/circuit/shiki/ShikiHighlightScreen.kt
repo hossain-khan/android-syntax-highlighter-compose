@@ -73,6 +73,7 @@ import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import kotlin.time.measureTimedValue
 
 @Parcelize
 data object ShikiHighlightScreen : Screen {
@@ -385,10 +386,13 @@ fun ShikiHighlight(
 
                 is ShikiHighlightScreen.State.Success -> {
                     val isDark = isSystemInDarkTheme()
-                    val annotated =
+                    // Measure local annotation-build time separately from the network request.
+                    // total = network (requestDurationMs) + client-side AnnotatedString construction.
+                    val (annotated, annotationDuration) =
                         remember(state.response, isDark) {
-                            buildAnnotatedStringFromDualResponse(state.response, isDark)
+                            measureTimedValue { buildAnnotatedStringFromDualResponse(state.response, isDark) }
                         }
+                    val totalDurationMs = state.requestDurationMs + annotationDuration.inWholeMilliseconds
                     val bgColor =
                         remember(state.response, isDark) {
                             resolveBackgroundColor(state.response, isDark)
@@ -413,7 +417,8 @@ fun ShikiHighlight(
                         }
                         HorizontalDivider()
                         MetricsRow(
-                            durationMs = state.requestDurationMs,
+                            networkDurationMs = state.requestDurationMs,
+                            totalDurationMs = totalDurationMs,
                             code = state.selectedSample.code,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
                         )
@@ -430,7 +435,8 @@ fun ShikiHighlight(
 
 @Composable
 private fun MetricsRow(
-    durationMs: Long,
+    networkDurationMs: Long,
+    totalDurationMs: Long,
     code: String,
     modifier: Modifier = Modifier,
 ) {
@@ -441,7 +447,7 @@ private fun MetricsRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Cloud icon indicates this is network (server) time, not local CPU time
+        // Cloud icon = server-side network request time (HTTP round-trip + Shiki tokenization)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -453,11 +459,17 @@ private fun MetricsRow(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "${durationMs}ms",
+                text = "${networkDurationMs}ms",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        // Total = network time + client-side AnnotatedString construction
+        Text(
+            text = "⏱ ${totalDurationMs}ms",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text(
             text = "↕ $lines lines",
             style = MaterialTheme.typography.labelSmall,
