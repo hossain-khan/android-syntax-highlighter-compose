@@ -154,6 +154,9 @@ class ShikiHighlightPresenter
             LaunchedEffect(selectedSample, selectedThemePair, retryTrigger) {
                 response = null
                 errorMessage = null
+                // Measure end-to-end network request time: from sending the highlight request
+                // to receiving the tokenized response. This includes HTTP round-trip latency
+                // and server-side Shiki tokenization time.
                 val startMs = System.currentTimeMillis()
                 shikiRepository
                     .highlightDual(

@@ -318,6 +318,10 @@ private fun ReadyContent(
     innerPadding: androidx.compose.foundation.layout.PaddingValues,
 ) {
     val theme = if (state.isDark) state.darkTheme else state.lightTheme
+    // Measure on-device tokenization time: how long CodeHighlighter takes to walk the
+    // grammar rules and produce the AnnotatedString. This is pure CPU work with no I/O,
+    // so it reflects the cost of local TextMate tokenization only.
+    // Wrapped in `remember` so re-tokenization only happens when code, grammar, or theme changes.
     val (annotated, duration) =
         remember(state.selectedSample.code, state.grammar, theme) {
             measureTimedValue { CodeHighlighter(state.grammar, theme).highlight(state.selectedSample.code) }
