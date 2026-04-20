@@ -131,8 +131,6 @@ dependencies {
 
     // Shiki Token Service SDK - server-driven syntax highlighting
     implementation(libs.shiki.sdk)
-    // Ktor logging plugin so Shiki HTTP calls appear in logcat (tag: "ShikiHttp")
-    implementation(libs.ktor.client.logging)
 
     // kotlin-textmate - local on-device syntax highlighting (core JAR + compose-ui AAR)
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
