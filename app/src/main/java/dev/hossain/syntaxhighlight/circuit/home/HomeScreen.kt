@@ -27,6 +27,7 @@ import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.syntaxhighlight.circuit.shiki.ShikiHighlightScreen
+import dev.hossain.syntaxhighlight.circuit.textmate.TextMateHighlightScreen
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -43,6 +44,8 @@ data object HomeScreen : Screen {
     @Immutable
     sealed interface Event : CircuitUiEvent {
         data object OpenShikiHighlight : Event
+
+        data object OpenTextMateHighlight : Event
     }
 }
 
@@ -56,6 +59,7 @@ class HomePresenter
             HomeScreen.State { event ->
                 when (event) {
                     HomeScreen.Event.OpenShikiHighlight -> navigator.goTo(ShikiHighlightScreen)
+                    HomeScreen.Event.OpenTextMateHighlight -> navigator.goTo(TextMateHighlightScreen)
                 }
             }
 
@@ -88,6 +92,13 @@ fun Home(
                         "Code is sent to the backend which returns colored tokens; " +
                         "the app builds an AnnotatedString and renders it natively.",
                 event = HomeScreen.Event.OpenShikiHighlight,
+            ),
+            HighlightApproach(
+                title = "KotlinTextMate",
+                subtitle =
+                    "On-device tokenization using TextMate grammars and VS Code themes. " +
+                        "No network required — grammars and themes are bundled in the app assets.",
+                event = HomeScreen.Event.OpenTextMateHighlight,
             ),
         )
 
