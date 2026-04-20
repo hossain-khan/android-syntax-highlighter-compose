@@ -368,15 +368,10 @@ private fun ReadyContent(
 
             Spacer(modifier = Modifier.height(8.dp))
             HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
-
             TextMateMetricsRow(
                 durationMs = durationMs,
-                lineCount =
-                    state.selectedSample.code
-                        .lines()
-                        .size,
-                charCount = state.selectedSample.code.length,
+                code = state.selectedSample.code,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -430,36 +425,29 @@ private fun LanguageDropdown(
 @Composable
 private fun TextMateMetricsRow(
     durationMs: Long,
-    lineCount: Int,
-    charCount: Int,
+    code: String,
     modifier: Modifier = Modifier,
 ) {
+    val lines = code.lines().size
+    val chars = code.length
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        MetricChip(label = "Tokenization", value = "${durationMs}ms")
-        MetricChip(label = "Lines", value = "$lineCount")
-        MetricChip(label = "Chars", value = "$charCount")
-    }
-}
-
-@Composable
-private fun MetricChip(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
         Text(
-            text = label,
+            text = "⏱ ${durationMs}ms",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            text = "↕ $lines lines",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = "∑ $chars chars",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
