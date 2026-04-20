@@ -33,6 +33,7 @@ import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.syntaxhighlight.R
+import dev.hossain.syntaxhighlight.circuit.comparison.ComparisonScreen
 import dev.hossain.syntaxhighlight.circuit.shiki.ShikiHighlightScreen
 import dev.hossain.syntaxhighlight.circuit.textmate.TextMateHighlightScreen
 import dev.zacsweers.metro.AppScope
@@ -53,6 +54,8 @@ data object HomeScreen : Screen {
         data object OpenShikiHighlight : Event
 
         data object OpenTextMateHighlight : Event
+
+        data object OpenComparison : Event
     }
 }
 
@@ -67,6 +70,7 @@ class HomePresenter
                 when (event) {
                     HomeScreen.Event.OpenShikiHighlight -> navigator.goTo(ShikiHighlightScreen)
                     HomeScreen.Event.OpenTextMateHighlight -> navigator.goTo(TextMateHighlightScreen)
+                    HomeScreen.Event.OpenComparison -> navigator.goTo(ComparisonScreen)
                 }
             }
 
@@ -109,6 +113,14 @@ fun Home(
                         "No network required — grammars and themes are bundled in the app assets.",
                 iconRes = R.drawable.cloud_off_24dp,
                 event = HomeScreen.Event.OpenTextMateHighlight,
+            ),
+            HighlightApproach(
+                title = "Compare Both",
+                subtitle =
+                    "Side-by-side comparison of Shiki (cloud) vs TextMate (on-device). " +
+                        "Includes performance metrics and device footprint analysis for each approach.",
+                iconRes = R.drawable.code_blocks_24dp,
+                event = HomeScreen.Event.OpenComparison,
             ),
         )
 

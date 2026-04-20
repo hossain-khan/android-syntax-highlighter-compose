@@ -48,10 +48,7 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.slack.circuit.codegen.annotations.CircuitInject
@@ -394,8 +391,8 @@ fun ShikiHighlight(
                         }
                     val totalDurationMs = state.requestDurationMs + annotationDuration.inWholeMilliseconds
                     val bgColor =
-                        remember(state.response, isDark) {
-                            resolveBackgroundColor(state.response, isDark)
+                        remember(isDark) {
+                            resolveShikiBackgroundColor(isDark)
                         }
                     Column(modifier = Modifier.fillMaxSize()) {
                         SelectionContainer(modifier = Modifier.weight(1f)) {
@@ -480,47 +477,6 @@ private fun MetricsRow(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-private fun buildAnnotatedStringFromDualResponse(
-    response: HighlightDualResponse,
-    isDark: Boolean,
-): AnnotatedString =
-    buildAnnotatedString {
-        response.tokens.forEachIndexed { lineIndex, line ->
-            line.forEach { token ->
-                val hex = if (isDark) token.darkColor else token.lightColor
-                val color = parseHexColor(hex)
-                withStyle(SpanStyle(color = color)) {
-                    append(token.text)
-                }
-            }
-            if (lineIndex < response.tokens.lastIndex) {
-                append("\n")
-            }
-        }
-    }
-
-/**
- * Resolves a background color from the first token on the first line whose text is whitespace-only,
- * falling back to a sensible default if the response contains no background hint.
- *
- * The Shiki service does not return an explicit background color; we approximate it with
- * dark/light Material surface colors.
- */
-private fun resolveBackgroundColor(
-    @Suppress("UNUSED_PARAMETER") response: HighlightDualResponse,
-    isDark: Boolean,
-): Color = if (isDark) Color(0xFF0D1117) else Color(0xFFF6F8FA)
-
-/** Parses a 6- or 8-digit hex color string (with or without leading `#`). */
-private fun parseHexColor(hex: String): Color {
-    val clean = hex.trimStart('#')
-    return when (clean.length) {
-        6 -> Color(android.graphics.Color.parseColor("#$clean"))
-        8 -> Color(android.graphics.Color.parseColor("#$clean"))
-        else -> Color.Unspecified
     }
 }
 
