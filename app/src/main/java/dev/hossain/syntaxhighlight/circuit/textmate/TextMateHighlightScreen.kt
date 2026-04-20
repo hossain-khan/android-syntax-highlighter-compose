@@ -82,6 +82,23 @@ data class TextMateSample(
     val code: String,
 )
 
+/**
+ * A named pair of dark + light TextMate themes. Each theme is loaded as an overlay on top of
+ * the VS Code base theme (`dark_vs` / `light_vs`), which provides default token color fallbacks
+ * — exactly how VS Code's own theme inheritance works.
+ */
+data class TextMateThemePair(
+    val label: String,
+    /** Base asset path for the dark variant (provides fallback defaults). */
+    val darkBaseAsset: String,
+    /** Overlay asset path for the dark variant (specific theme colors take precedence). */
+    val darkOverlayAsset: String,
+    /** Base asset path for the light variant. */
+    val lightBaseAsset: String,
+    /** Overlay asset path for the light variant. */
+    val lightOverlayAsset: String,
+)
+
 /** Code samples that have corresponding TextMate grammar files in `assets/grammars/`. */
 private val textMateSamples: List<TextMateSample> =
     buildList {
@@ -99,6 +116,32 @@ private val textMateSamples: List<TextMateSample> =
             }
         }
     }
+
+/** Available theme pairs, mirroring the choice count in the Shiki screen. */
+val defaultTextMateThemePairs: List<TextMateThemePair> =
+    listOf(
+        TextMateThemePair(
+            label = "VS Dark+ / VS Light+",
+            darkBaseAsset = "themes/dark_vs.json",
+            darkOverlayAsset = "themes/dark_plus.json",
+            lightBaseAsset = "themes/light_vs.json",
+            lightOverlayAsset = "themes/light_plus.json",
+        ),
+        TextMateThemePair(
+            label = "One Dark Pro / Quiet Light",
+            darkBaseAsset = "themes/dark_vs.json",
+            darkOverlayAsset = "themes/one_dark_pro.json",
+            lightBaseAsset = "themes/light_vs.json",
+            lightOverlayAsset = "themes/quiet_light.json",
+        ),
+        TextMateThemePair(
+            label = "Monokai / Solarized Light",
+            darkBaseAsset = "themes/dark_vs.json",
+            darkOverlayAsset = "themes/monokai.json",
+            lightBaseAsset = "themes/light_vs.json",
+            lightOverlayAsset = "themes/solarized_light.json",
+        ),
+    )
 
 @Parcelize
 data object TextMateHighlightScreen : Screen {
@@ -122,6 +165,8 @@ data object TextMateHighlightScreen : Screen {
             val darkTheme: Theme,
             val lightTheme: Theme,
             val isDark: Boolean,
+            val availableThemePairs: List<TextMateThemePair>,
+            val selectedThemePair: TextMateThemePair,
             override val eventSink: (Event) -> Unit,
         ) : State
     }
@@ -134,6 +179,10 @@ data object TextMateHighlightScreen : Screen {
         ) : Event
 
         data object ToggleTheme : Event
+
+        data class ThemePairSelected(
+            val pair: TextMateThemePair,
+        ) : Event
     }
 }
 
@@ -152,12 +201,14 @@ class TextMateHighlightPresenter
             var errorMessage by rememberRetained { mutableStateOf<String?>(null) }
             var selectedSample by rememberRetained { mutableStateOf(textMateSamples.first()) }
             var isDark by rememberRetained { mutableStateOf(systemDark) }
+            var selectedThemePair by rememberRetained { mutableStateOf(defaultTextMateThemePairs.first()) }
 
+            // Load all grammars once on first composition.
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
                     try {
                         val onigLib = JoniOnigLib()
-                        val loaded =
+                        grammarMap =
                             textMateSamples.associate { sample ->
                                 val raw =
                                     context.assets
@@ -165,23 +216,33 @@ class TextMateHighlightPresenter
                                         .use { GrammarReader.readGrammar(it) }
                                 sample.label to Grammar(raw.scopeName, raw, onigLib)
                             }
-                        val dark =
-                            context.assets.open("themes/dark_vs.json").use { base ->
-                                context.assets.open("themes/dark_plus.json").use { overlay ->
-                                    ThemeReader.readTheme(base, overlay)
-                                }
-                            }
-                        val light =
-                            context.assets.open("themes/light_vs.json").use { base ->
-                                context.assets.open("themes/light_plus.json").use { overlay ->
-                                    ThemeReader.readTheme(base, overlay)
-                                }
-                            }
-                        grammarMap = loaded
-                        darkTheme = dark
-                        lightTheme = light
                     } catch (e: Exception) {
-                        errorMessage = e.message ?: "Failed to load grammar or theme files"
+                        errorMessage = e.message ?: "Failed to load grammar files"
+                    }
+                }
+            }
+
+            // Reload dark and light themes whenever the selected theme pair changes. Reset to null
+            // first so the UI shows a brief loading state rather than stale colors from the old theme.
+            LaunchedEffect(selectedThemePair) {
+                darkTheme = null
+                lightTheme = null
+                withContext(Dispatchers.IO) {
+                    try {
+                        darkTheme =
+                            context.assets.open(selectedThemePair.darkBaseAsset).use { base ->
+                                context.assets.open(selectedThemePair.darkOverlayAsset).use { overlay ->
+                                    ThemeReader.readTheme(base, overlay)
+                                }
+                            }
+                        lightTheme =
+                            context.assets.open(selectedThemePair.lightBaseAsset).use { base ->
+                                context.assets.open(selectedThemePair.lightOverlayAsset).use { overlay ->
+                                    ThemeReader.readTheme(base, overlay)
+                                }
+                            }
+                    } catch (e: Exception) {
+                        errorMessage = e.message ?: "Failed to load theme files"
                     }
                 }
             }
@@ -191,6 +252,7 @@ class TextMateHighlightPresenter
                     TextMateHighlightScreen.Event.NavigateBack -> navigator.pop()
                     is TextMateHighlightScreen.Event.SampleSelected -> selectedSample = event.sample
                     TextMateHighlightScreen.Event.ToggleTheme -> isDark = !isDark
+                    is TextMateHighlightScreen.Event.ThemePairSelected -> selectedThemePair = event.pair
                 }
             }
 
@@ -213,6 +275,8 @@ class TextMateHighlightPresenter
                         darkTheme = darkTheme!!,
                         lightTheme = lightTheme!!,
                         isDark = isDark,
+                        availableThemePairs = defaultTextMateThemePairs,
+                        selectedThemePair = selectedThemePair,
                         eventSink = eventSink,
                     )
                 }
@@ -363,11 +427,23 @@ private fun ReadyContent(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
-        LanguageDropdown(
-            samples = state.samples,
-            selectedSample = state.selectedSample,
-            onSampleSelected = { state.eventSink(TextMateHighlightScreen.Event.SampleSelected(it)) },
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            LanguageDropdown(
+                samples = state.samples,
+                selectedSample = state.selectedSample,
+                onSampleSelected = { state.eventSink(TextMateHighlightScreen.Event.SampleSelected(it)) },
+                modifier = Modifier.weight(1f),
+            )
+            TextMateThemePairDropdown(
+                pairs = state.availableThemePairs,
+                selected = state.selectedThemePair,
+                onSelect = { state.eventSink(TextMateHighlightScreen.Event.ThemePairSelected(it)) },
+                modifier = Modifier.weight(1f),
+            )
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -420,7 +496,7 @@ private fun LanguageDropdown(
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
     ) {
         OutlinedTextField(
             value = selectedSample.label,
@@ -442,6 +518,47 @@ private fun LanguageDropdown(
                     text = { Text(sample.label) },
                     onClick = {
                         onSampleSelected(sample)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TextMateThemePairDropdown(
+    pairs: List<TextMateThemePair>,
+    selected: TextMateThemePair,
+    onSelect: (TextMateThemePair) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = selected.label,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Theme") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier =
+                Modifier
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth(),
+            singleLine = true,
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            pairs.forEach { pair ->
+                DropdownMenuItem(
+                    text = { Text(pair.label) },
+                    onClick = {
+                        onSelect(pair)
                         expanded = false
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
