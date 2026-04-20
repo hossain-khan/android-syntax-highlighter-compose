@@ -89,6 +89,7 @@ private val textMateSamples: List<TextMateSample> =
             val grammarAsset =
                 when (sample.label) {
                     "Kotlin" -> "grammars/kotlin.tmLanguage.json"
+                    "Python" -> "grammars/python.tmLanguage.json"
                     "JSON" -> "grammars/JSON.tmLanguage.json"
                     "JavaScript" -> "grammars/JavaScript.tmLanguage.json"
                     else -> null

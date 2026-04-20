@@ -93,7 +93,7 @@ Text(annotated, fontFamily = Monospace)
 
 | Type | Files |
 |---|---|
-| Grammars | `kotlin.tmLanguage.json`, `JSON.tmLanguage.json`, `JavaScript.tmLanguage.json` |
+| Grammars | `kotlin.tmLanguage.json`, `python.tmLanguage.json`, `JSON.tmLanguage.json`, `JavaScript.tmLanguage.json` |
 | Dark themes | `dark_vs.json` + `dark_plus.json` |
 | Light themes | `light_vs.json` + `light_plus.json` |
 
