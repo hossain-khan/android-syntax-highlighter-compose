@@ -149,7 +149,9 @@ class ShikiHighlightPresenter
         @Composable
         override fun present(): ShikiHighlightScreen.State {
             var selectedSample by rememberRetained { mutableStateOf(CodeSamples.all.first()) }
-            var selectedThemePair by rememberRetained { mutableStateOf(defaultThemePairs.first()) }
+            var selectedThemePair by rememberRetained {
+                mutableStateOf(defaultThemePairs.first { it.dark == Theme.ONE_DARK_PRO })
+            }
             var response by rememberRetained { mutableStateOf<HighlightDualResponse?>(null) }
             var requestDurationMs by rememberRetained { mutableStateOf(0L) }
             var errorMessage by rememberRetained { mutableStateOf<String?>(null) }

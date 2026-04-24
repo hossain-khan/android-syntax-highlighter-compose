@@ -454,21 +454,20 @@ private fun ReadyContent(
                     .verticalScroll(rememberScrollState()),
         ) {
             SelectionContainer {
-                Box(
+                Text(
+                    text = annotated,
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 13.sp,
+                        ),
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .background(bgColor, shape = MaterialTheme.shapes.small)
-                            .padding(12.dp)
-                            .horizontalScroll(rememberScrollState()),
-                ) {
-                    Text(
-                        text = annotated,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 13.sp,
-                        softWrap = false,
-                    )
-                }
+                            .horizontalScroll(rememberScrollState())
+                            .padding(12.dp),
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
