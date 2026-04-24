@@ -205,7 +205,7 @@ class ComparisonPresenter
                                 val raw = context.assets.open(asset).use { GrammarReader.readGrammar(it) }
                                 sample.label to Grammar(raw.scopeName, raw, onigLib)
                             }
-                        val pair = defaultTextMateThemePairs.first()
+                        val pair = defaultTextMateThemePairs.first { it.darkOverlayAsset.contains("one_dark_pro") }
                         textMateThemes =
                             context.assets.open(pair.darkBaseAsset).use { base ->
                                 context.assets.open(pair.darkOverlayAsset).use { overlay ->
@@ -254,8 +254,8 @@ class ComparisonPresenter
                             shikiRepository.highlightDual(
                                 code = selectedSample.code,
                                 language = selectedSample.language,
-                                darkTheme = Theme.GITHUB_DARK,
-                                lightTheme = Theme.GITHUB_LIGHT,
+                                darkTheme = Theme.ONE_DARK_PRO,
+                                lightTheme = Theme.MIN_LIGHT,
                             )
                         }
                     shikiState =
@@ -579,7 +579,7 @@ private fun TextMateInfoCard(
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         InfoSection(title = "Device Footprint (approx.)") {
             InfoRow(label = "📄  Grammar (${sample.label})", value = "~$grammarKb KB")
-            InfoRow(label = "🎨  Themes (VS Dark+/Light+)", value = "~$themeKb KB")
+            InfoRow(label = "🎨  Themes (One Dark Pro / Quiet Light)", value = "~$themeKb KB")
             InfoRow(label = "📚  Library JARs", value = "~$libKb KB")
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             InfoRow(label = "📦  Total for this sample", value = "~$totalKb KB", emphasized = true)

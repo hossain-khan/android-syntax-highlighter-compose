@@ -201,7 +201,9 @@ class TextMateHighlightPresenter
             var errorMessage by rememberRetained { mutableStateOf<String?>(null) }
             var selectedSample by rememberRetained { mutableStateOf(textMateSamples.first()) }
             var isDark by rememberRetained { mutableStateOf(systemDark) }
-            var selectedThemePair by rememberRetained { mutableStateOf(defaultTextMateThemePairs.first()) }
+            var selectedThemePair by rememberRetained {
+                mutableStateOf(defaultTextMateThemePairs.first { it.darkOverlayAsset.contains("one_dark_pro") })
+            }
 
             // Load all grammars once on first composition.
             LaunchedEffect(Unit) {
