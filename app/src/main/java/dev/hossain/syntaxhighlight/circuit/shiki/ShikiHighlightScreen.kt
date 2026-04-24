@@ -408,7 +408,7 @@ fun ShikiHighlight(
                                 modifier =
                                     Modifier
                                         .fillMaxSize()
-                                        .background(bgColor)
+                                        .background(bgColor, shape = MaterialTheme.shapes.small)
                                         .horizontalScroll(rememberScrollState())
                                         .verticalScroll(rememberScrollState())
                                         .padding(12.dp),

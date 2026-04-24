@@ -449,39 +449,30 @@ private fun ReadyContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-        ) {
-            SelectionContainer {
-                Text(
-                    text = annotated,
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 13.sp,
-                        ),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .background(bgColor, shape = MaterialTheme.shapes.small)
-                            .horizontalScroll(rememberScrollState())
-                            .padding(12.dp),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
-            TextMateMetricsRow(
-                durationMs = durationMs,
-                code = state.selectedSample.code,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+        SelectionContainer(modifier = Modifier.weight(1f)) {
+            Text(
+                text = annotated,
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 13.sp,
+                    ),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(bgColor, shape = MaterialTheme.shapes.small)
+                        .horizontalScroll(rememberScrollState())
+                        .verticalScroll(rememberScrollState())
+                        .padding(12.dp),
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
+
+        HorizontalDivider()
+        TextMateMetricsRow(
+            durationMs = durationMs,
+            code = state.selectedSample.code,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+        )
     }
 }
 
