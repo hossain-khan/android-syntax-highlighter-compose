@@ -113,6 +113,14 @@ private const val LIBRARY_BYTES = 172_000L
 private val comparisonSamples: List<CodeSample> =
     CodeSamples.all.filter { grammarAssetByLabel.containsKey(it.label) }
 
+/**
+ * Screen that renders a side-by-side comparison of both syntax highlighting approaches:
+ * the cloud-based [Shiki Token Service][dev.hossain.syntaxhighlight.data.shiki.ShikiRepository]
+ * and the on-device [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) library.
+ *
+ * The screen shows the same code snippet tokenized by both approaches, together with timing
+ * metrics and a device-footprint breakdown so users can easily evaluate the trade-offs.
+ */
 @Parcelize
 data object ComparisonScreen : Screen {
     @Stable
@@ -176,6 +184,19 @@ data object ComparisonScreen : Screen {
     }
 }
 
+/**
+ * Presenter for [ComparisonScreen].
+ *
+ * Concurrently fetches Shiki tokens via [ShikiRepository] and loads TextMate grammars/themes
+ * from the app's assets, then exposes both results through a single [ComparisonScreen.State].
+ *
+ * Key responsibilities:
+ * - Calls [ShikiRepository.highlightDual] whenever the selected code sample changes
+ * - Loads all bundled [Grammar] files once on first composition
+ * - Loads the One Dark Pro / Quiet Light theme pair (VS Code base + overlay) for TextMate
+ * - Tracks independent retry counters for Shiki and TextMate to allow per-side retries
+ * - Measures both Shiki network latency and TextMate tokenization time for comparison metrics
+ */
 @AssistedInject
 class ComparisonPresenter
     constructor(

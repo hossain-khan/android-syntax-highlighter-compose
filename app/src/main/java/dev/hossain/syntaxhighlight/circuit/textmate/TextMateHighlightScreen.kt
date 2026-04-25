@@ -143,6 +143,14 @@ val defaultTextMateThemePairs: List<TextMateThemePair> =
         ),
     )
 
+/**
+ * Screen that demonstrates fully on-device syntax highlighting using
+ * [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate).
+ *
+ * Grammar files (`.tmLanguage.json`) and theme files are loaded from the app's `assets/`
+ * directory on a background thread. Once loaded, [dev.textmate.compose.CodeHighlighter]
+ * tokenizes the selected code snippet entirely on-device — no network connection is required.
+ */
 @Parcelize
 data object TextMateHighlightScreen : Screen {
     @Stable
@@ -186,6 +194,20 @@ data object TextMateHighlightScreen : Screen {
     }
 }
 
+/**
+ * Presenter for [TextMateHighlightScreen].
+ *
+ * Uses two independent [LaunchedEffect]s to load assets:
+ * - **Grammar loading** (runs once on first composition): reads all four `.tmLanguage.json`
+ *   grammar files from `assets/grammars/` and builds a [Map] of label → [dev.textmate.grammar.Grammar].
+ * - **Theme loading** (re-runs on theme pair change): reads the selected base and overlay
+ *   theme JSON files from `assets/themes/` and combines them via [dev.textmate.theme.ThemeReader.readTheme].
+ *
+ * State transitions:
+ * - [TextMateHighlightScreen.State.Loading] until both grammars and themes are loaded
+ * - [TextMateHighlightScreen.State.Ready] once all assets are available
+ * - [TextMateHighlightScreen.State.Error] if any asset fails to load
+ */
 @AssistedInject
 class TextMateHighlightPresenter
     constructor(

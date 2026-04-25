@@ -42,6 +42,13 @@ import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.parcelize.Parcelize
 
+/**
+ * Root screen of the app.
+ *
+ * Displays a list of available syntax highlighting approaches. Tapping a card navigates to
+ * the corresponding screen: [ShikiHighlightScreen], [TextMateHighlightScreen], or
+ * [ComparisonScreen].
+ */
 @Parcelize
 data object HomeScreen : Screen {
     @Stable
@@ -59,6 +66,11 @@ data object HomeScreen : Screen {
     }
 }
 
+/**
+ * Presenter for [HomeScreen].
+ *
+ * Stateless — simply maps each [HomeScreen.Event] to a [Navigator] call.
+ */
 @AssistedInject
 class HomePresenter
     constructor(
