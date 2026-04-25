@@ -72,6 +72,15 @@ import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import kotlin.time.measureTimedValue
 
+/**
+ * Screen that demonstrates server-driven syntax highlighting via the
+ * [Shiki Token Service](https://syntax-highlight.gohk.xyz).
+ *
+ * The presenter sends the selected code sample to the `/highlight/dual` endpoint, which returns
+ * per-token colors for both a dark and a light theme in a single network request.
+ * The UI builds a Compose [androidx.compose.ui.text.AnnotatedString] from these tokens and
+ * renders it with a monospace font — no grammar files needed on the device.
+ */
 @Parcelize
 data object ShikiHighlightScreen : Screen {
     @Stable
@@ -140,6 +149,18 @@ val defaultThemePairs =
         ShikiHighlightScreen.ThemePair("Dracula / GitHub Light", Theme.DRACULA, Theme.GITHUB_LIGHT),
     )
 
+/**
+ * Presenter for [ShikiHighlightScreen].
+ *
+ * Calls [ShikiRepository.highlightDual] via a [LaunchedEffect] whenever the selected code
+ * sample, theme pair, or retry counter changes. Measures the wall-clock time of the network
+ * request and stores it in [ShikiHighlightScreen.State.Success.requestDurationMs].
+ *
+ * State transitions:
+ * - [ShikiHighlightScreen.State.Loading] while the network request is in flight
+ * - [ShikiHighlightScreen.State.Success] when a response is received
+ * - [ShikiHighlightScreen.State.Error] when the request fails
+ */
 @AssistedInject
 class ShikiHighlightPresenter
     constructor(

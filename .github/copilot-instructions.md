@@ -7,22 +7,40 @@ The template is pre-configured with Circuit, a Compose-driven architecture for K
 ## Project Structure
 
 ```
-android-compose-app-template/
+android-syntax-highlighter-compose/
 ├── app/
 │   └── src/
-│       └── main/java/app/example/
-│           ├── CircuitApp.kt           # Main Application class
-│           ├── MainActivity.kt         # Main Activity with Circuit
-│           ├── circuit/                # Circuit screens and presenters
-│           │   ├── ExampleInboxScreen.kt
-│           │   ├── ExampleEmailDetailsScreen.kt
-│           │   └── overlay/            # Circuit overlays
-│           ├── data/                   # Repositories and data sources
-│           ├── di/                     # Metro dependency injection
-│           ├── work/                   # WorkManager workers
-│           └── ui/theme/               # Compose theme configuration
+│       └── main/java/dev/hossain/syntaxhighlight/
+│           ├── MainActivity.kt              # Entry point; sets up Circuit navigation stack
+│           ├── SyntaxHighlightApp.kt        # Application class; Metro graph creation + WorkManager init
+│           ├── circuit/                     # Circuit screens and presenters
+│           │   ├── home/
+│           │   │   └── HomeScreen.kt        # Home screen listing the three approaches
+│           │   ├── shiki/
+│           │   │   ├── ShikiHighlightScreen.kt   # Server-driven Shiki highlighting screen
+│           │   │   └── ShikiRenderUtils.kt        # AnnotatedString builder for Shiki token response
+│           │   ├── textmate/
+│           │   │   └── TextMateHighlightScreen.kt # On-device TextMate highlighting screen
+│           │   ├── comparison/
+│           │   │   └── ComparisonScreen.kt  # Side-by-side Shiki vs TextMate comparison
+│           │   └── overlay/                 # Circuit overlays
+│           │       └── AppInfoOverlay.kt    # Bottom-sheet app-info overlay (example)
+│           ├── data/                        # Repositories and data sources
+│           │   ├── samples/CodeSamples.kt   # Hardcoded code snippets (Kotlin/Python/JSON/JS)
+│           │   └── shiki/
+│           │       ├── ShikiRepository.kt   # Interface
+│           │       └── ShikiRepositoryImpl.kt # Calls /highlight/dual via ShikiClient
+│           ├── di/                          # Metro dependency injection
+│           │   ├── AppGraph.kt              # Root dependency graph (AppScope)
+│           │   ├── CircuitProviders.kt      # Circuit presenter/UI factory multibindings
+│           │   ├── ComposeAppComponentFactory.kt # Activity constructor injection via Metro
+│           │   ├── AppWorkerFactory.kt      # Custom WorkerFactory for Metro-injected workers
+│           │   ├── ActivityKey.kt           # Map key for Activity multibinding
+│           │   └── WorkerKey.kt             # Map key for Worker multibinding
+│           └── work/
+│               └── SampleWorker.kt          # Example CoroutineWorker with assisted injection
 └── gradle/
-    └── libs.versions.toml              # Centralized dependency versions
+    └── libs.versions.toml                   # Centralized dependency versions
 ```
 
 ## Architecture Patterns
@@ -177,14 +195,14 @@ Card(colors = CardDefaults.cardColors(containerColor = Color.Blue)) {
 All dependency versions are centralized in `gradle/libs.versions.toml`:
 
 **Major Dependencies**:
-- Android Gradle Plugin (AGP): 9.1.0 (supports built-in Kotlin)
-- Kotlin: 2.3.10 (latest stable)
+- Android Gradle Plugin (AGP): 9.1.1 (supports built-in Kotlin)
+- Kotlin: 2.3.20 (latest stable)
 - KSP: 2.3.6
 - Circuit: 0.33.1
-- Metro: 0.11.2 (latest)
-- Compose BOM: 2026.03.00
-- WorkManager: 2.11.1
-- Gradle: 9.4.0 (minimum required: 9.3.1)
+- Metro: 0.13.2 (latest)
+- Compose BOM: 2026.03.01
+- WorkManager: 2.11.2
+- Gradle: 9.4.1 (minimum required: 9.3.1)
 
 ## Common Patterns
 

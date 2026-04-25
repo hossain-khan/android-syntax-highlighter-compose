@@ -11,11 +11,12 @@ Both approaches produce a Compose `AnnotatedString` and share the same code samp
 
 - ☁️ **Server-driven highlighting** via [Shiki Token Service](https://syntax-highlight.gohk.xyz) — no grammar files on device
 - 📴 **On-device highlighting** via [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) — fully offline, zero network calls
-- 🌗 **Dark & light theme support** on both screens
+- 🆚 **Side-by-side comparison** — compare Shiki and TextMate output, performance, and device footprint together
+- 🌗 **Dark & light theme support** on all screens
 - 🔤 **Multiple languages** — Kotlin, Python, JSON, JavaScript
-- 🎭 **Multiple themes** — GitHub, One Dark Pro, Dracula (Shiki); VS Dark/Light (TextMate)
+- 🎭 **Multiple themes** — GitHub, One Dark Pro, Dracula (Shiki); VS Dark+/Light+, One Dark Pro/Quiet Light, Monokai/Solarized Light (TextMate)
 - 📊 **Performance metrics** — network request time, total time, on-device tokenization time, line/char counts
-- 📋 **Copy to clipboard** on both screens
+- 📋 **Copy to clipboard** on all screens
 - 🔄 **Refresh** (Shiki) — re-trigger the network request in one tap
 - 📋 **Plain-text fallback** — raw code shown when the Shiki server is unavailable
 
@@ -75,7 +76,7 @@ Source code
     │
     ▼
 GrammarReader.readGrammar(assetStream)   ← .tmLanguage.json from assets/
-ThemeReader.readTheme(assetStreams)      ← dark_vs + dark_plus / light_vs + light_plus
+ThemeReader.readTheme(assetStreams)      ← base theme (dark_vs / light_vs) + overlay theme
     │
     ▼
 CodeHighlighter(grammar, theme).highlight(code)   ← pure CPU, no I/O
@@ -94,8 +95,10 @@ Text(annotated, fontFamily = Monospace)
 | Type | Files |
 |---|---|
 | Grammars | `kotlin.tmLanguage.json`, `python.tmLanguage.json`, `JSON.tmLanguage.json`, `JavaScript.tmLanguage.json` |
-| Dark themes | `dark_vs.json` + `dark_plus.json` |
-| Light themes | `light_vs.json` + `light_plus.json` |
+| Dark themes (base) | `dark_vs.json` |
+| Dark themes (overlays) | `dark_plus.json`, `one_dark_pro.json`, `monokai.json` |
+| Light themes (base) | `light_vs.json` |
+| Light themes (overlays) | `light_plus.json`, `quiet_light.json`, `solarized_light.json` |
 
 ## Tech Stack
 
@@ -113,25 +116,41 @@ Text(annotated, fontFamily = Monospace)
 
 ```
 app/src/main/java/dev/hossain/syntaxhighlight/
-├── MainActivity.kt                      # Entry point, sets up Circuit
+├── MainActivity.kt                      # Entry point; sets up Circuit navigation stack
+├── SyntaxHighlightApp.kt                # Application class; creates Metro app graph and schedules background work
 ├── circuit/
 │   ├── home/
-│   │   └── HomeScreen.kt                # Home screen — lists both highlighting approaches
+│   │   └── HomeScreen.kt                # Home screen — lists the three highlighting approaches
 │   ├── shiki/
-│   │   └── ShikiHighlightScreen.kt      # ☁️ Shiki demo: presenter + UI + AnnotatedString builder
-│   └── textmate/
-│       └── TextMateHighlightScreen.kt   # 📴 TextMate demo: loads grammars, tokenizes on-device
+│   │   ├── ShikiHighlightScreen.kt      # ☁️ Shiki demo: presenter + UI composable
+│   │   └── ShikiRenderUtils.kt          # Builds AnnotatedString from Shiki dual-theme token response
+│   ├── textmate/
+│   │   └── TextMateHighlightScreen.kt   # 📴 TextMate demo: loads grammars/themes, tokenizes on-device
+│   ├── comparison/
+│   │   └── ComparisonScreen.kt          # Side-by-side Shiki vs TextMate comparison with metrics
+│   └── overlay/
+│       └── AppInfoOverlay.kt            # Bottom-sheet overlay showing app information (example)
 ├── data/
 │   ├── samples/
 │   │   └── CodeSamples.kt               # Hardcoded Kotlin/Python/JSON/JS snippets
 │   └── shiki/
 │       ├── ShikiRepository.kt           # Interface
 │       └── ShikiRepositoryImpl.kt       # Wraps ShikiClient, calls /highlight/dual
-└── di/                                  # Metro DI components
+├── di/
+│   ├── AppGraph.kt                      # Root Metro dependency graph (AppScope)
+│   ├── AppWorkerFactory.kt              # Custom WorkerFactory for Metro-injected workers
+│   ├── ActivityKey.kt                   # Map key annotation for Activity multibinding
+│   ├── CircuitProviders.kt              # Metro bindings for Circuit (presenter/UI factories)
+│   ├── ComposeAppComponentFactory.kt    # AppComponentFactory enabling Activity constructor injection
+│   └── WorkerKey.kt                     # Map key annotation for Worker multibinding
+└── work/
+    └── SampleWorker.kt                  # Example CoroutineWorker with assisted injection
 
 app/src/main/assets/
 ├── grammars/                            # TextMate grammar files (.tmLanguage.json)
-└── themes/                              # TextMate theme files (dark_vs, dark_plus, light_vs, light_plus)
+└── themes/                              # TextMate theme files
+                                         #   dark_vs.json (base) + dark_plus.json, one_dark_pro.json, monokai.json (overlays)
+                                         #   light_vs.json (base) + light_plus.json, quiet_light.json, solarized_light.json (overlays)
 
 app/libs/
 ├── core.jar                             # kotlin-textmate core library
@@ -141,7 +160,7 @@ app/libs/
 ## Getting Started
 
 1. Clone the repo and open in Android Studio
-2. Build and run — both screens work out of the box:
+2. Build and run — all three screens work out of the box:
    - **Shiki** uses the hosted service at `https://syntax-highlight.gohk.xyz`
    - **TextMate** runs fully on-device using bundled grammar/theme assets
 3. To point Shiki at your own service instance, update `SHIKI_BASE_URL` in `ShikiRepositoryImpl.kt`
@@ -162,6 +181,7 @@ app/libs/
 | `android-lint.yml` | Push / PR — Android lint checks |
 | `android-release.yml` | Tag push — builds signed release APK |
 | `diffuse.yml` | PR — APK size diff report |
+| `test-keystore-apk-signing.yml` | Manual (`workflow_dispatch`) — validates keystore configuration |
 
 For production releases, configure these GitHub secrets:
 - `KEYSTORE_BASE64` — base64-encoded keystore file
