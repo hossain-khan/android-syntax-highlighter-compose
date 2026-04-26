@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 @ContributesBinding(AppScope::class)
 class TextMateRepositoryImpl
     constructor(
-        @param:ApplicationContext private val context: Context,
+        @ApplicationContext private val context: Context,
     ) : TextMateRepository {
         override suspend fun loadGrammars(samples: List<TextMateSample>): Map<String, Grammar> =
             withContext(Dispatchers.IO) {
