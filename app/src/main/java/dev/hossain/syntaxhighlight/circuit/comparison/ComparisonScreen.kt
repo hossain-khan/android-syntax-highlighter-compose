@@ -1,6 +1,5 @@
 package dev.hossain.syntaxhighlight.circuit.comparison
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -37,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -63,16 +63,14 @@ import dev.hossain.shiki.model.Theme
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.circuit.shiki.buildAnnotatedStringFromDualResponse
 import dev.hossain.syntaxhighlight.circuit.shiki.resolveShikiBackgroundColor
-import dev.hossain.syntaxhighlight.circuit.textmate.defaultTextMateThemePairs
 import dev.hossain.syntaxhighlight.data.samples.CodeSample
 import dev.hossain.syntaxhighlight.data.samples.CodeSamples
 import dev.hossain.syntaxhighlight.data.shiki.ShikiRepository
-import dev.hossain.syntaxhighlight.di.ApplicationContext
+import dev.hossain.syntaxhighlight.data.textmate.TextMateRepository
+import dev.hossain.syntaxhighlight.data.textmate.defaultTextMateThemePairs
+import dev.hossain.syntaxhighlight.data.textmate.textMateSamples
 import dev.textmate.compose.CodeHighlighter
 import dev.textmate.grammar.Grammar
-import dev.textmate.grammar.raw.GrammarReader
-import dev.textmate.regex.JoniOnigLib
-import dev.textmate.theme.ThemeReader
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -81,15 +79,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlin.time.measureTimedValue
-
-/** Grammar asset path keyed by [CodeSample.label]. */
-private val grammarAssetByLabel: Map<String, String> =
-    mapOf(
-        "Kotlin" to "grammars/kotlin.tmLanguage.json",
-        "Python" to "grammars/python.tmLanguage.json",
-        "JSON" to "grammars/JSON.tmLanguage.json",
-        "JavaScript" to "grammars/JavaScript.tmLanguage.json",
-    )
 
 /**
  * Approximate bundled grammar file sizes in bytes, keyed by [CodeSample.label].
@@ -111,7 +100,7 @@ private const val LIBRARY_BYTES = 172_000L
 
 /** Samples that have both a Shiki language ID and a bundled TextMate grammar. */
 private val comparisonSamples: List<CodeSample> =
-    CodeSamples.all.filter { grammarAssetByLabel.containsKey(it.label) }
+    CodeSamples.all.filter { sample -> textMateSamples.any { it.label == sample.label } }
 
 /**
  * Screen that renders a side-by-side comparison of both syntax highlighting approaches:
@@ -171,6 +160,7 @@ data object ComparisonScreen : Screen {
         ) : TextMateState
     }
 
+    @Immutable
     sealed interface Event : CircuitUiEvent {
         data object NavigateBack : Event
 
@@ -188,12 +178,12 @@ data object ComparisonScreen : Screen {
  * Presenter for [ComparisonScreen].
  *
  * Concurrently fetches Shiki tokens via [ShikiRepository] and loads TextMate grammars/themes
- * from the app's assets, then exposes both results through a single [ComparisonScreen.State].
+ * via [TextMateRepository], then exposes both results through a single [ComparisonScreen.State].
  *
  * Key responsibilities:
  * - Calls [ShikiRepository.highlightDual] whenever the selected code sample changes
- * - Loads all bundled [Grammar] files once on first composition
- * - Loads the One Dark Pro / Quiet Light theme pair (VS Code base + overlay) for TextMate
+ * - Loads all bundled [Grammar] files once on first composition via [TextMateRepository.loadGrammars]
+ * - Loads the One Dark Pro / Quiet Light theme pair via [TextMateRepository.loadThemePair]
  * - Tracks independent retry counters for Shiki and TextMate to allow per-side retries
  * - Measures both Shiki network latency and TextMate tokenization time for comparison metrics
  */
@@ -202,7 +192,7 @@ class ComparisonPresenter
     constructor(
         @Assisted private val navigator: Navigator,
         private val shikiRepository: ShikiRepository,
-        @param:ApplicationContext private val context: Context,
+        private val textMateRepository: TextMateRepository,
     ) : Presenter<ComparisonScreen.State> {
         @Composable
         override fun present(): ComparisonScreen.State {
@@ -215,32 +205,14 @@ class ComparisonPresenter
             var shikiRetry by rememberRetained { mutableIntStateOf(0) }
             var textMateRetry by rememberRetained { mutableIntStateOf(0) }
 
-            // Load all grammars + VS Dark+/Light+ themes once on first composition.
+            // Load all grammars + One Dark Pro / Quiet Light theme pair once on first composition.
             LaunchedEffect(textMateRetry) {
-                withContext(Dispatchers.IO) {
-                    try {
-                        val onigLib = JoniOnigLib()
-                        grammarMap =
-                            comparisonSamples.associate { sample ->
-                                val asset = grammarAssetByLabel[sample.label]!!
-                                val raw = context.assets.open(asset).use { GrammarReader.readGrammar(it) }
-                                sample.label to Grammar(raw.scopeName, raw, onigLib)
-                            }
-                        val pair = defaultTextMateThemePairs.first { it.darkOverlayAsset.contains("one_dark_pro") }
-                        textMateThemes =
-                            context.assets.open(pair.darkBaseAsset).use { base ->
-                                context.assets.open(pair.darkOverlayAsset).use { overlay ->
-                                    ThemeReader.readTheme(base, overlay)
-                                }
-                            } to
-                            context.assets.open(pair.lightBaseAsset).use { base ->
-                                context.assets.open(pair.lightOverlayAsset).use { overlay ->
-                                    ThemeReader.readTheme(base, overlay)
-                                }
-                            }
-                    } catch (e: Exception) {
-                        textMateState = ComparisonScreen.TextMateState.Error(e.message ?: "Failed to load grammars or themes")
-                    }
+                try {
+                    grammarMap = textMateRepository.loadGrammars(textMateSamples)
+                    val pair = defaultTextMateThemePairs.first { it.darkOverlayAsset.contains("one_dark_pro") }
+                    textMateThemes = textMateRepository.loadThemePair(pair)
+                } catch (e: Exception) {
+                    textMateState = ComparisonScreen.TextMateState.Error(e.message ?: "Failed to load grammars or themes")
                 }
             }
 

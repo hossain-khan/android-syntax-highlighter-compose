@@ -1,7 +1,6 @@
 package dev.hossain.syntaxhighlight.circuit.textmate
 
 import android.content.ClipData
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -33,6 +32,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -57,91 +57,21 @@ import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.syntaxhighlight.R
-import dev.hossain.syntaxhighlight.data.samples.CodeSamples
-import dev.hossain.syntaxhighlight.di.ApplicationContext
+import dev.hossain.syntaxhighlight.data.textmate.TextMateRepository
+import dev.hossain.syntaxhighlight.data.textmate.TextMateSample
+import dev.hossain.syntaxhighlight.data.textmate.TextMateThemePair
+import dev.hossain.syntaxhighlight.data.textmate.defaultTextMateThemePairs
+import dev.hossain.syntaxhighlight.data.textmate.textMateSamples
 import dev.textmate.compose.CodeHighlighter
 import dev.textmate.grammar.Grammar
-import dev.textmate.grammar.raw.GrammarReader
-import dev.textmate.regex.JoniOnigLib
 import dev.textmate.theme.Theme
-import dev.textmate.theme.ThemeReader
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlin.time.measureTimedValue
-
-/** A code sample paired with its TextMate grammar asset path. */
-data class TextMateSample(
-    val label: String,
-    val grammarAsset: String,
-    val code: String,
-)
-
-/**
- * A named pair of dark + light TextMate themes. Each theme is loaded as an overlay on top of
- * the VS Code base theme (`dark_vs` / `light_vs`), which provides default token color fallbacks
- * — exactly how VS Code's own theme inheritance works.
- */
-data class TextMateThemePair(
-    val label: String,
-    /** Base asset path for the dark variant (provides fallback defaults). */
-    val darkBaseAsset: String,
-    /** Overlay asset path for the dark variant (specific theme colors take precedence). */
-    val darkOverlayAsset: String,
-    /** Base asset path for the light variant. */
-    val lightBaseAsset: String,
-    /** Overlay asset path for the light variant. */
-    val lightOverlayAsset: String,
-)
-
-/** Code samples that have corresponding TextMate grammar files in `assets/grammars/`. */
-private val textMateSamples: List<TextMateSample> =
-    buildList {
-        CodeSamples.all.forEach { sample ->
-            val grammarAsset =
-                when (sample.label) {
-                    "Kotlin" -> "grammars/kotlin.tmLanguage.json"
-                    "Python" -> "grammars/python.tmLanguage.json"
-                    "JSON" -> "grammars/JSON.tmLanguage.json"
-                    "JavaScript" -> "grammars/JavaScript.tmLanguage.json"
-                    else -> null
-                }
-            if (grammarAsset != null) {
-                add(TextMateSample(sample.label, grammarAsset, sample.code))
-            }
-        }
-    }
-
-/** Available theme pairs, mirroring the choice count in the Shiki screen. */
-val defaultTextMateThemePairs: List<TextMateThemePair> =
-    listOf(
-        TextMateThemePair(
-            label = "VS Dark+ / VS Light+",
-            darkBaseAsset = "themes/dark_vs.json",
-            darkOverlayAsset = "themes/dark_plus.json",
-            lightBaseAsset = "themes/light_vs.json",
-            lightOverlayAsset = "themes/light_plus.json",
-        ),
-        TextMateThemePair(
-            label = "One Dark Pro / Quiet Light",
-            darkBaseAsset = "themes/dark_vs.json",
-            darkOverlayAsset = "themes/one_dark_pro.json",
-            lightBaseAsset = "themes/light_vs.json",
-            lightOverlayAsset = "themes/quiet_light.json",
-        ),
-        TextMateThemePair(
-            label = "Monokai / Solarized Light",
-            darkBaseAsset = "themes/dark_vs.json",
-            darkOverlayAsset = "themes/monokai.json",
-            lightBaseAsset = "themes/light_vs.json",
-            lightOverlayAsset = "themes/solarized_light.json",
-        ),
-    )
 
 /**
  * Screen that demonstrates fully on-device syntax highlighting using
@@ -179,6 +109,7 @@ data object TextMateHighlightScreen : Screen {
         ) : State
     }
 
+    @Immutable
     sealed interface Event : CircuitUiEvent {
         data object NavigateBack : Event
 
@@ -197,11 +128,12 @@ data object TextMateHighlightScreen : Screen {
 /**
  * Presenter for [TextMateHighlightScreen].
  *
- * Uses two independent [LaunchedEffect]s to load assets:
- * - **Grammar loading** (runs once on first composition): reads all four `.tmLanguage.json`
- *   grammar files from `assets/grammars/` and builds a [Map] of label → [dev.textmate.grammar.Grammar].
- * - **Theme loading** (re-runs on theme pair change): reads the selected base and overlay
- *   theme JSON files from `assets/themes/` and combines them via [dev.textmate.theme.ThemeReader.readTheme].
+ * Delegates asset loading to [TextMateRepository], which keeps file I/O out of the presenter.
+ * Uses two independent [LaunchedEffect]s:
+ * - **Grammar loading** (runs once on first composition): loads all grammar files via
+ *   [TextMateRepository.loadGrammars].
+ * - **Theme loading** (re-runs on theme pair change): loads the selected theme pair via
+ *   [TextMateRepository.loadThemePair], resetting to null first to show a brief loading state.
  *
  * State transitions:
  * - [TextMateHighlightScreen.State.Loading] until both grammars and themes are loaded
@@ -212,7 +144,7 @@ data object TextMateHighlightScreen : Screen {
 class TextMateHighlightPresenter
     constructor(
         @Assisted private val navigator: Navigator,
-        @param:ApplicationContext private val context: Context,
+        private val textMateRepository: TextMateRepository,
     ) : Presenter<TextMateHighlightScreen.State> {
         @Composable
         override fun present(): TextMateHighlightScreen.State {
@@ -229,20 +161,10 @@ class TextMateHighlightPresenter
 
             // Load all grammars once on first composition.
             LaunchedEffect(Unit) {
-                withContext(Dispatchers.IO) {
-                    try {
-                        val onigLib = JoniOnigLib()
-                        grammarMap =
-                            textMateSamples.associate { sample ->
-                                val raw =
-                                    context.assets
-                                        .open(sample.grammarAsset)
-                                        .use { GrammarReader.readGrammar(it) }
-                                sample.label to Grammar(raw.scopeName, raw, onigLib)
-                            }
-                    } catch (e: Exception) {
-                        errorMessage = e.message ?: "Failed to load grammar files"
-                    }
+                try {
+                    grammarMap = textMateRepository.loadGrammars(textMateSamples)
+                } catch (e: Exception) {
+                    errorMessage = e.message ?: "Failed to load grammar files"
                 }
             }
 
@@ -251,23 +173,12 @@ class TextMateHighlightPresenter
             LaunchedEffect(selectedThemePair) {
                 darkTheme = null
                 lightTheme = null
-                withContext(Dispatchers.IO) {
-                    try {
-                        darkTheme =
-                            context.assets.open(selectedThemePair.darkBaseAsset).use { base ->
-                                context.assets.open(selectedThemePair.darkOverlayAsset).use { overlay ->
-                                    ThemeReader.readTheme(base, overlay)
-                                }
-                            }
-                        lightTheme =
-                            context.assets.open(selectedThemePair.lightBaseAsset).use { base ->
-                                context.assets.open(selectedThemePair.lightOverlayAsset).use { overlay ->
-                                    ThemeReader.readTheme(base, overlay)
-                                }
-                            }
-                    } catch (e: Exception) {
-                        errorMessage = e.message ?: "Failed to load theme files"
-                    }
+                try {
+                    val (dark, light) = textMateRepository.loadThemePair(selectedThemePair)
+                    darkTheme = dark
+                    lightTheme = light
+                } catch (e: Exception) {
+                    errorMessage = e.message ?: "Failed to load theme files"
                 }
             }
 

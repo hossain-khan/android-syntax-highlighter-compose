@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.metro)
     alias(libs.plugins.kotlinter)
@@ -137,13 +136,6 @@ dependencies {
     implementation(libs.textmate.joni)
     implementation(libs.textmate.jcodings)
     implementation(libs.textmate.gson)
-
-    // Networking
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.logging.interceptor)
-    implementation(libs.retrofit)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.retrofit.kotlinx.serialization.converter)
 
     // Testing
     androidTestImplementation(libs.androidx.espresso.core)
