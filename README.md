@@ -196,3 +196,11 @@ For production releases, configure these GitHub secrets:
 - `KEYSTORE_BASE64` — base64-encoded keystore file
 - `KEYSTORE_PASSWORD` — keystore password
 - `KEY_ALIAS` — key alias
+
+
+---
+
+> [!NOTE]
+> This project was developed with the assistance of AI coding agents (GitHub Copilot).
+> Code, architecture, tests, and documentation were generated or refined through
+> AI-assisted pair programming. Review accordingly before using in production.
