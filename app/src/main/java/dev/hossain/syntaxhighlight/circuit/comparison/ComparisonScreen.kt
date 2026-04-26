@@ -241,27 +241,29 @@ class ComparisonPresenter
             // Call the Shiki API whenever the sample changes or a retry is triggered.
             LaunchedEffect(selectedSample, shikiRetry) {
                 shikiState = ComparisonScreen.ShikiState.Loading
-                val (result, elapsed) =
-                    measureTimedValue {
-                        shikiRepository.highlightDual(
-                            code = selectedSample.code,
-                            language = selectedSample.language,
-                            darkTheme = Theme.ONE_DARK_PRO,
-                            lightTheme = Theme.MIN_LIGHT,
-                        )
-                    }
-                shikiState =
-                    result.fold(
-                        onSuccess = { response ->
-                            ComparisonScreen.ShikiState.Success(
-                                response = response,
-                                networkMs = elapsed.inWholeMilliseconds,
+                withContext(Dispatchers.IO) {
+                    val (result, elapsed) =
+                        measureTimedValue {
+                            shikiRepository.highlightDual(
+                                code = selectedSample.code,
+                                language = selectedSample.language,
+                                darkTheme = Theme.ONE_DARK_PRO,
+                                lightTheme = Theme.MIN_LIGHT,
                             )
-                        },
-                        onFailure = { e ->
-                            ComparisonScreen.ShikiState.Error(e.message ?: "Network request failed")
-                        },
-                    )
+                        }
+                    shikiState =
+                        result.fold(
+                            onSuccess = { response ->
+                                ComparisonScreen.ShikiState.Success(
+                                    response = response,
+                                    networkMs = elapsed.inWholeMilliseconds,
+                                )
+                            },
+                            onFailure = { e ->
+                                ComparisonScreen.ShikiState.Error(e.message ?: "Network request failed")
+                            },
+                        )
+                }
             }
 
             val eventSink: (ComparisonScreen.Event) -> Unit = { event ->
