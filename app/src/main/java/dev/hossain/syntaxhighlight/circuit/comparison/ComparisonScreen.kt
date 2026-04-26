@@ -75,6 +75,8 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlin.time.measureTimedValue
 
@@ -219,18 +221,20 @@ class ComparisonPresenter
                 val map = grammarMap ?: return@LaunchedEffect
                 val themes = textMateThemes ?: return@LaunchedEffect
                 textMateState = ComparisonScreen.TextMateState.Loading
-                try {
-                    val grammar =
-                        map[selectedSample.label]
-                            ?: throw IllegalStateException("No grammar for ${selectedSample.label}")
-                    textMateState =
-                        ComparisonScreen.TextMateState.Success(
-                            grammar = grammar,
-                            darkTheme = themes.first,
-                            lightTheme = themes.second,
-                        )
-                } catch (e: Exception) {
-                    textMateState = ComparisonScreen.TextMateState.Error(e.message ?: "Tokenization failed")
+                withContext(Dispatchers.Default) {
+                    try {
+                        val grammar =
+                            map[selectedSample.label]
+                                ?: throw IllegalStateException("No grammar for ${selectedSample.label}")
+                        textMateState =
+                            ComparisonScreen.TextMateState.Success(
+                                grammar = grammar,
+                                darkTheme = themes.first,
+                                lightTheme = themes.second,
+                            )
+                    } catch (e: Exception) {
+                        textMateState = ComparisonScreen.TextMateState.Error(e.message ?: "Tokenization failed")
+                    }
                 }
             }
 
