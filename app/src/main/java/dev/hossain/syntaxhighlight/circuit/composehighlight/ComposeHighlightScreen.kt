@@ -34,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,9 +59,7 @@ import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.highlight.engine.HighlightTheme
-import dev.hossain.highlight.ui.HighlightThemeProvider
-import dev.hossain.highlight.ui.LocalHighlightTheme
-import dev.hossain.highlight.ui.rememberHighlightEngine
+import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.data.samples.CodeSample
 import dev.hossain.syntaxhighlight.data.samples.CodeSamples
@@ -253,106 +250,90 @@ private fun ReadyContent(
         }
     val hlLanguage = state.selectedSample.toHighlightJsLanguage()
 
-    // HighlightThemeProvider uses staticCompositionLocalOf, which unconditionally forces
-    // recomposition of all descendants when darkTheme changes — bypassing Compose's
-    // stability-based skip optimizations that would otherwise prevent the UI from updating.
-    HighlightThemeProvider(
-        darkTheme = state.isDark,
-        lightHighlightTheme = lightTheme,
-        darkHighlightTheme = darkTheme,
+    var highlightMs by remember { mutableStateOf<Long?>(null) }
+
+    // Single JS call produces both light + dark AnnotatedStrings; theme switching is instant.
+    val themedResult by rememberHighlightedCodeBothThemes(
+        code = state.selectedSample.code,
+        language = hlLanguage,
+        lightTheme = lightTheme,
+        darkTheme = darkTheme,
+        onHighlightComplete = { durationMs -> highlightMs = durationMs },
+    )
+
+    val annotatedCode = if (state.isDark) themedResult?.dark else themedResult?.light
+    val activeTheme = if (state.isDark) darkTheme else lightTheme
+    val bgColor = activeTheme.backgroundColor.takeIf { it != Color.Unspecified } ?: Color(0xFF1E1E1E)
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
     ) {
-        val activeTheme = LocalHighlightTheme.current
+        Spacer(modifier = Modifier.height(8.dp))
 
-        val engine = rememberHighlightEngine()
-        var annotatedCode by remember { mutableStateOf<AnnotatedString?>(null) }
-        var highlightMs by remember { mutableStateOf<Long?>(null) }
-
-        // activeTheme is a new reference each time isDark toggles (provided by
-        // HighlightThemeProvider), so LaunchedEffect correctly re-highlights on theme change.
-        LaunchedEffect(state.selectedSample, activeTheme) {
-            annotatedCode = null
-            highlightMs = null
-            val start = System.currentTimeMillis()
-            engine
-                .highlight(state.selectedSample.code, hlLanguage, activeTheme)
-                .onSuccess { result ->
-                    annotatedCode = result
-                    highlightMs = System.currentTimeMillis() - start
-                }
-        }
-
-        val bgColor = activeTheme.backgroundColor.takeIf { it != Color.Unspecified } ?: Color(0xFF1E1E1E)
-
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SampleDropdown(
-                    samples = state.samples,
-                    selectedSample = state.selectedSample,
-                    onSampleSelected = { state.eventSink(ComposeHighlightScreen.Event.SampleSelected(it)) },
-                    modifier = Modifier.weight(1f),
-                )
-                ThemePairDropdown(
-                    pairs = ComposeHighlightThemePair.entries,
-                    selected = state.selectedThemePair,
-                    onSelect = { state.eventSink(ComposeHighlightScreen.Event.ThemePairSelected(it)) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (annotatedCode == null) {
-                Box(
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .background(bgColor, shape = MaterialTheme.shapes.small),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                SelectionContainer(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = annotatedCode!!,
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 13.sp,
-                            ),
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .background(bgColor, shape = MaterialTheme.shapes.small)
-                                .horizontalScroll(rememberScrollState())
-                                .verticalScroll(rememberScrollState())
-                                .padding(12.dp),
-                    )
-                }
-            }
-
-            HorizontalDivider()
-            ComposeHighlightMetricsRow(
-                highlightMs = highlightMs,
-                code = state.selectedSample.code,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+            SampleDropdown(
+                samples = state.samples,
+                selectedSample = state.selectedSample,
+                onSampleSelected = { state.eventSink(ComposeHighlightScreen.Event.SampleSelected(it)) },
+                modifier = Modifier.weight(1f),
+            )
+            ThemePairDropdown(
+                pairs = ComposeHighlightThemePair.entries,
+                selected = state.selectedThemePair,
+                onSelect = { state.eventSink(ComposeHighlightScreen.Event.ThemePairSelected(it)) },
+                modifier = Modifier.weight(1f),
             )
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (annotatedCode == null) {
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(bgColor, shape = MaterialTheme.shapes.small),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            SelectionContainer(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = annotatedCode,
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 13.sp,
+                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(bgColor, shape = MaterialTheme.shapes.small)
+                            .horizontalScroll(rememberScrollState())
+                            .verticalScroll(rememberScrollState())
+                            .padding(12.dp),
+                )
+            }
+        }
+
+        HorizontalDivider()
+        ComposeHighlightMetricsRow(
+            highlightMs = highlightMs,
+            code = state.selectedSample.code,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+        )
     }
 }
 
