@@ -145,7 +145,7 @@ Text(annotated, fontFamily = Monospace)
 
 ```kotlin
 // gradle/libs.versions.toml
-compose-highlight = { group = "com.github.hossain-khan", name = "android-compose-highlight", version = "0.4.0" }
+compose-highlight = { group = "com.github.hossain-khan", name = "android-compose-highlight", version = "0.5.0" }
 ```
 
 Distributed via [JitPack](https://jitpack.io/#hossain-khan/android-compose-highlight).
