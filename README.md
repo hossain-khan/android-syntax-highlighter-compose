@@ -30,8 +30,6 @@ All approaches produce a Compose `AnnotatedString` and share the same code sampl
 
 
 
-
-
 ## How it Works
 
 ### ☁️ Approach 1: Server-Driven Highlighting (Shiki)
@@ -230,22 +228,6 @@ app/libs/
 # Format Kotlin code
 ./gradlew formatKotlin
 ```
-
-## CI / GitHub Actions
-
-| Workflow | Trigger |
-|---|---|
-| `android.yml` | Push / PR to `main` — compiles and runs lint |
-| `android-lint.yml` | Push / PR — Android lint checks |
-| `android-release.yml` | Tag push — builds signed release APK |
-| `diffuse.yml` | PR — APK size diff report |
-| `test-keystore-apk-signing.yml` | Manual (`workflow_dispatch`) — validates keystore configuration |
-
-For production releases, configure these GitHub secrets:
-- `KEYSTORE_BASE64` — base64-encoded keystore file
-- `KEYSTORE_PASSWORD` — keystore password
-- `KEY_ALIAS` — key alias
-
 
 ---
 
