@@ -20,6 +20,15 @@ Both approaches produce a Compose `AnnotatedString` and share the same code samp
 - 🔄 **Refresh** (Shiki) — re-trigger the network request in one tap
 - 📋 **Plain-text fallback** — raw code shown when the Shiki server is unavailable
 
+### Demo Screenshots
+
+| Shiki Token Service | Native Kotlin TextMate | Compare Both |
+| ---- | ---- | ---- |
+| <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/cd0d4583-25be-4c74-9db0-afdc12872016" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/51968c3f-3feb-47cb-9746-0614c2cb5761" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/15d51596-7a58-4592-843d-350d246e8a07" /> | 
+
+
+
+
 ## How it Works
 
 ### ☁️ Approach 1: Server-Driven Highlighting (Shiki)
@@ -187,3 +196,11 @@ For production releases, configure these GitHub secrets:
 - `KEYSTORE_BASE64` — base64-encoded keystore file
 - `KEYSTORE_PASSWORD` — keystore password
 - `KEY_ALIAS` — key alias
+
+
+---
+
+> [!NOTE]
+> This project was developed with the assistance of AI coding agents (GitHub Copilot).
+> Code, architecture, tests, and documentation were generated or refined through
+> AI-assisted pair programming. Review accordingly before using in production.
