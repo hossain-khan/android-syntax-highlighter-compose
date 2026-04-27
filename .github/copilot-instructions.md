@@ -15,7 +15,7 @@ android-syntax-highlighter-compose/
 │           ├── SyntaxHighlightApp.kt        # Application class; Metro graph creation + WorkManager init
 │           ├── circuit/                     # Circuit screens and presenters
 │           │   ├── home/
-│           │   │   └── HomeScreen.kt        # Home screen listing the three approaches
+│           │   │   └── HomeScreen.kt        # Home screen listing the four approaches
 │           │   ├── shiki/
 │           │   │   ├── ShikiHighlightScreen.kt   # Server-driven Shiki highlighting screen
 │           │   │   └── ShikiRenderUtils.kt        # AnnotatedString builder for Shiki token response
@@ -23,6 +23,8 @@ android-syntax-highlighter-compose/
 │           │   │   └── TextMateHighlightScreen.kt # On-device TextMate highlighting screen
 │           │   ├── comparison/
 │           │   │   └── ComparisonScreen.kt  # Side-by-side Shiki vs TextMate comparison
+│           │   ├── composehighlight/
+│           │   │   └── ComposeHighlightScreen.kt  # On-device Highlight.js highlighting screen (compose-highlight library)
 │           │   └── overlay/                 # Circuit overlays
 │           │       └── AppInfoOverlay.kt    # Bottom-sheet app-info overlay (example)
 │           ├── data/                        # Repositories and data sources
