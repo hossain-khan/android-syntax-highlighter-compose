@@ -8,6 +8,11 @@ An Android app that showcases three different **syntax highlighting** approaches
 
 All approaches produce a Compose `AnnotatedString` and share the same code samples and UI structure, making it easy to compare their output, performance, and trade-offs side by side.
 
+> [!NOTE]
+> This project was developed with the assistance of AI coding agents (GitHub Copilot).
+> Code, architecture, tests, and documentation were generated or refined through
+> AI-assisted pair programming. Review accordingly before using in production.
+
 ## Features
 
 - ☁️ **Server-driven highlighting** via [Shiki Token Service](https://syntax-highlight.gohk.xyz) — no grammar files on device
@@ -228,10 +233,3 @@ app/libs/
 # Format Kotlin code
 ./gradlew formatKotlin
 ```
-
----
-
-> [!NOTE]
-> This project was developed with the assistance of AI coding agents (GitHub Copilot).
-> Code, architecture, tests, and documentation were generated or refined through
-> AI-assisted pair programming. Review accordingly before using in production.
