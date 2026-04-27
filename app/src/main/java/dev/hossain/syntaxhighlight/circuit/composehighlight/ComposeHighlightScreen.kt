@@ -264,20 +264,9 @@ private fun ReadyContent(
     val annotatedCode = if (state.isDark) themedResult?.dark else themedResult?.light
     val activeTheme = if (state.isDark) darkTheme else lightTheme
     val bgColor = activeTheme.backgroundColor.takeIf { it != Color.Unspecified } ?: Color(0xFF1E1E1E)
-
-    // IMPORTANT: always set textColor explicitly from the active theme.
-    //
-    // HtmlToAnnotatedString only applies SpanStyle to individual token spans — it does NOT
-    // apply the .hljs base style (background + default text color) to the entire AnnotatedString.
-    // Any plain/unstyled text (whitespace, identifiers without a CSS rule, etc.) therefore
-    // inherits LocalContentColor from MaterialTheme, which follows the *system* dark/light mode
-    // rather than our toggle.  Setting color = textColor on the Text composable anchors the base
-    // color to the active theme and makes the toggle work correctly regardless of system theme.
-    //
-    // If you use the library's own SyntaxHighlightedCode composable you don't need this workaround
-    // because it sets the base text color internally — but when rendering the AnnotatedString
-    // yourself via a plain Text(), you must do this yourself.
-    val textColor = activeTheme.defaultTextColor.takeIf { it != Color.Unspecified } ?: Color(0xFFCCCCCC)
+    // No explicit textColor needed — since v0.5.0 HtmlToAnnotatedString embeds the .hljs base
+    // text color as a full-range span in the AnnotatedString, so plain tokens no longer inherit
+    // LocalContentColor from MaterialTheme.
 
     Column(
         modifier =
@@ -323,7 +312,6 @@ private fun ReadyContent(
             SelectionContainer(modifier = Modifier.weight(1f)) {
                 Text(
                     text = annotatedCode,
-                    color = textColor,
                     style =
                         MaterialTheme.typography.bodySmall.copy(
                             fontFamily = FontFamily.Monospace,
