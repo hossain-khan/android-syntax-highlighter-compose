@@ -26,7 +26,8 @@ All approaches produce a Compose `AnnotatedString` and share the same code sampl
 
 | Shiki Token Service | Native Kotlin TextMate | Compare Both | Compose Highlight (Highlight.js) |
 | ---- | ---- | ---- | ---- |
-| <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/cd0d4583-25be-4c74-9db0-afdc12872016" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/51968c3f-3feb-47cb-9746-0614c2cb5761" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/15d51596-7a58-4592-843d-350d246e8a07" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/fc4a7bc4-dfd8-4f04-a8e5-de0b11a55da2" /> |
+| <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/cd0d4583-25be-4c74-9db0-afdc12872016" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/51968c3f-3feb-47cb-9746-0614c2cb5761" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/15d51596-7a58-4592-843d-350d246e8a07" /> | <img width="1008" height="2244" alt="Screenshot_20260427_074442" src="https://github.com/user-attachments/assets/afdbb599-2846-4c2b-b50d-539cc3b78383" /> |
+
 
 
 
