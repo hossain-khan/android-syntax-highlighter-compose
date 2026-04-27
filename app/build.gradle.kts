@@ -131,6 +131,9 @@ dependencies {
     // Shiki Token Service SDK - server-driven syntax highlighting
     implementation(libs.shiki.sdk)
 
+    // compose-highlight - on-device syntax highlighting via Highlight.js WebView
+    implementation(libs.compose.highlight)
+
     // kotlin-textmate - local on-device syntax highlighting (core JAR + compose-ui AAR)
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
     implementation(libs.textmate.joni)

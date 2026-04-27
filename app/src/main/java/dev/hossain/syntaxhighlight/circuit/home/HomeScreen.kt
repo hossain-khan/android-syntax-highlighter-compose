@@ -34,6 +34,7 @@ import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.circuit.comparison.ComparisonScreen
+import dev.hossain.syntaxhighlight.circuit.composehighlight.ComposeHighlightScreen
 import dev.hossain.syntaxhighlight.circuit.shiki.ShikiHighlightScreen
 import dev.hossain.syntaxhighlight.circuit.textmate.TextMateHighlightScreen
 import dev.zacsweers.metro.AppScope
@@ -63,6 +64,8 @@ data object HomeScreen : Screen {
         data object OpenTextMateHighlight : Event
 
         data object OpenComparison : Event
+
+        data object OpenComposeHighlight : Event
     }
 }
 
@@ -83,6 +86,7 @@ class HomePresenter
                     HomeScreen.Event.OpenShikiHighlight -> navigator.goTo(ShikiHighlightScreen)
                     HomeScreen.Event.OpenTextMateHighlight -> navigator.goTo(TextMateHighlightScreen)
                     HomeScreen.Event.OpenComparison -> navigator.goTo(ComparisonScreen)
+                    HomeScreen.Event.OpenComposeHighlight -> navigator.goTo(ComposeHighlightScreen)
                 }
             }
 
@@ -133,6 +137,14 @@ fun Home(
                         "Includes performance metrics and device footprint analysis for each approach.",
                 iconRes = R.drawable.code_blocks_24dp,
                 event = HomeScreen.Event.OpenComparison,
+            ),
+            HighlightApproach(
+                title = "Compose Highlight",
+                subtitle =
+                    "On-device highlighting via Highlight.js running in a hidden WebView. " +
+                        "190+ languages with no grammar files to maintain — just drop in the library.",
+                iconRes = R.drawable.code_24dp,
+                event = HomeScreen.Event.OpenComposeHighlight,
             ),
         )
 

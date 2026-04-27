@@ -98,6 +98,10 @@ androidx-work = { group = "androidx.work", name = "work-runtime-ktx", version.re
 # https://github.com/hossain-khan/shiki-token-service/blob/main/sdk/README.md
 shiki-sdk = { group = "com.github.hossain-khan.shiki-token-service", name = "sdk-android", version = "sdk-1.0.5" }
 
+# compose-highlight - on-device syntax highlighting via Highlight.js WebView
+# https://github.com/hossain-khan/android-compose-highlight
+compose-highlight = { group = "com.github.hossain-khan", name = "android-compose-highlight", version = "0.3.0" }
+
 # kotlin-textmate transitive dependencies (required by core.jar local library)
 # https://github.com/ivan-magda/kotlin-textmate
 textmate-joni = { group = "org.jruby.joni", name = "joni", version.ref = "joni" }
