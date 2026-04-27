@@ -60,6 +60,7 @@ import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.highlight.engine.HighlightTheme
+import dev.hossain.highlight.engine.ThemedHighlightResult
 import dev.hossain.highlight.ui.rememberHighlightEngine
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.data.samples.CodeSample
@@ -253,25 +254,25 @@ private fun ReadyContent(
     val hlLanguage = state.selectedSample.toHighlightJsLanguage()
 
     val engine = rememberHighlightEngine()
-    var annotatedCode by remember { mutableStateOf<AnnotatedString?>(null) }
+    var themedResult by remember { mutableStateOf<ThemedHighlightResult?>(null) }
     var highlightMs by remember { mutableStateOf<Long?>(null) }
 
-    LaunchedEffect(state.selectedSample, activeTheme) {
-        annotatedCode = null
+    // Highlight once for both themes — switching light/dark is instant with no re-highlighting.
+    LaunchedEffect(state.selectedSample, lightTheme, darkTheme) {
+        themedResult = null
         highlightMs = null
         val start = System.currentTimeMillis()
         engine
-            .highlight(state.selectedSample.code, hlLanguage, activeTheme)
+            .highlightBothThemes(state.selectedSample.code, hlLanguage, lightTheme, darkTheme)
             .onSuccess { result ->
-                annotatedCode = result
+                themedResult = result
                 highlightMs = System.currentTimeMillis() - start
             }
     }
 
-    val bgColor =
-        remember(activeTheme) {
-            activeTheme.backgroundColor.takeIf { it != Color.Unspecified } ?: Color(0xFF1E1E1E)
-        }
+    val annotatedCode = if (state.isDark) themedResult?.dark else themedResult?.light
+
+    val bgColor = activeTheme.backgroundColor.takeIf { it != Color.Unspecified } ?: Color(0xFF1E1E1E)
 
     Column(
         modifier =
@@ -316,7 +317,7 @@ private fun ReadyContent(
         } else {
             SelectionContainer(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = annotatedCode ?: AnnotatedString(state.selectedSample.code),
+                    text = annotatedCode,
                     style =
                         MaterialTheme.typography.bodySmall.copy(
                             fontFamily = FontFamily.Monospace,
