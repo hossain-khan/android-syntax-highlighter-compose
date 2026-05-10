@@ -43,7 +43,7 @@ gson = "2.14.0"
 # https://github.com/pinterest/ktlint
 kotlinter = "5.4.2"
 lifecycleRuntimeKtx = "2.10.0"
-metro = "0.13.2"
+metro = "1.0.0"
 androidxWebkit = "1.16.0"
 
 [libraries]
