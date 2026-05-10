@@ -135,7 +135,7 @@ fun Home(
                 subtitle =
                     "On-device highlighting via Highlight.js running in a hidden WebView. " +
                         "190+ languages with no grammar files to maintain — just drop in the library.",
-                iconRes = R.drawable.code_24dp,
+                iconRes = R.drawable.cloud_off_24dp,
                 event = HomeScreen.Event.OpenComposeHighlight,
             ),
             HighlightApproach(
