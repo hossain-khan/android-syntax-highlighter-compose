@@ -131,20 +131,21 @@ fun Home(
                 event = HomeScreen.Event.OpenTextMateHighlight,
             ),
             HighlightApproach(
-                title = "Compare Both",
-                subtitle =
-                    "Side-by-side comparison of Shiki (cloud) vs TextMate (on-device). " +
-                        "Includes performance metrics and device footprint analysis for each approach.",
-                iconRes = R.drawable.code_blocks_24dp,
-                event = HomeScreen.Event.OpenComparison,
-            ),
-            HighlightApproach(
                 title = "Compose Highlight",
                 subtitle =
                     "On-device highlighting via Highlight.js running in a hidden WebView. " +
                         "190+ languages with no grammar files to maintain — just drop in the library.",
                 iconRes = R.drawable.code_24dp,
                 event = HomeScreen.Event.OpenComposeHighlight,
+            ),
+            HighlightApproach(
+                title = "Compare All Highlights",
+                subtitle =
+                    "Side-by-side comparison of all three approaches: Shiki (cloud), " +
+                        "TextMate (on-device), and Compose Highlight (WebView). " +
+                        "Includes performance metrics and device footprint analysis for each.",
+                iconRes = R.drawable.code_blocks_24dp,
+                event = HomeScreen.Event.OpenComparison,
             ),
         )
 
