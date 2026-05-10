@@ -123,7 +123,7 @@ fun Home(
                 event = HomeScreen.Event.OpenShikiHighlight,
             ),
             HighlightApproach(
-                title = "KotlinTextMate",
+                title = "Kotlin TextMate",
                 subtitle =
                     "On-device tokenization using TextMate grammars and VS Code themes. " +
                         "No network required — grammars and themes are bundled in the app assets.",
