@@ -132,7 +132,9 @@ dependencies {
     implementation(libs.shiki.sdk)
 
     // compose-highlight - on-device syntax highlighting via Highlight.js WebView
+    // WebKit is added explicitly for WebView pre-warming (WebViewCompat.startUpWebView)
     implementation(libs.compose.highlight)
+    implementation(libs.androidx.webkit)
 
     // kotlin-textmate - local on-device syntax highlighting (core JAR + compose-ui AAR)
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))

@@ -1,6 +1,12 @@
 package dev.hossain.syntaxhighlight
 
 import android.app.Application
+import android.util.Log
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewOutcomeReceiver
+import androidx.webkit.WebViewStartUpConfig
+import androidx.webkit.WebViewStartUpResult
+import androidx.webkit.WebViewStartupException
 import androidx.work.Configuration
 import androidx.work.Constraints
 import androidx.work.NetworkType
@@ -11,6 +17,8 @@ import androidx.work.workDataOf
 import dev.hossain.syntaxhighlight.di.AppGraph
 import dev.hossain.syntaxhighlight.work.SampleWorker
 import dev.zacsweers.metro.createGraphFactory
+
+private const val TAG = "SyntaxHighlightApp"
 
 /**
  * Application class for the app with key initializations.
@@ -42,7 +50,38 @@ class SyntaxHighlightApp :
 
     override fun onCreate() {
         super.onCreate()
+        preWarmWebView()
         scheduleBackgroundWork()
+    }
+
+    /**
+     * Pre-warms the WebView renderer process to reduce first-call latency for the
+     * compose-highlight library (which uses a hidden WebView to run Highlight.js).
+     *
+     * See: https://github.com/hossain-khan/android-compose-highlight#optional-webview-pre-warming
+     */
+    private fun preWarmWebView() {
+        Log.d(TAG, "WebView pre-warming: started")
+        val startMs = System.currentTimeMillis()
+        runCatching {
+            WebViewCompat.startUpWebView(
+                applicationContext,
+                WebViewStartUpConfig.Builder(mainExecutor).build(),
+                object : WebViewOutcomeReceiver<WebViewStartUpResult, WebViewStartupException> {
+                    override fun onResult(result: WebViewStartUpResult) {
+                        val elapsed = System.currentTimeMillis() - startMs
+                        Log.d(TAG, "WebView pre-warming: completed in ${elapsed}ms")
+                    }
+
+                    override fun onError(error: WebViewStartupException) {
+                        val elapsed = System.currentTimeMillis() - startMs
+                        Log.e(TAG, "WebView pre-warming: failed after ${elapsed}ms", error)
+                    }
+                },
+            )
+        }.onFailure { e ->
+            Log.e(TAG, "WebView pre-warming: failed to start", e)
+        }
     }
 
     /**
