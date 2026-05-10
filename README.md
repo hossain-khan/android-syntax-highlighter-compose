@@ -18,7 +18,7 @@ All approaches produce a Compose `AnnotatedString` and share the same code sampl
 - ☁️ **Server-driven highlighting** via [Shiki Token Service](https://syntax-highlight.gohk.xyz) — no grammar files on device
 - 📴 **On-device highlighting** via [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) — fully offline, zero network calls
 - 🌐 **On-device highlighting** via [compose-highlight](https://github.com/hossain-khan/android-compose-highlight) — Highlight.js in a hidden WebView, 190+ languages, no grammar files to maintain
-- 🆚 **Side-by-side comparison** — compare Shiki and TextMate output, performance, and device footprint together
+- 🆚 **Side-by-side comparison** — compare all three approaches (Shiki, TextMate, Compose Highlight) output, performance, and device footprint together
 - 🌗 **Dark & light theme support** on all screens
 - 🔤 **Multiple languages** — Kotlin, Python, JSON, JavaScript
 - 🎭 **Multiple themes** — GitHub, One Dark Pro, Dracula (Shiki); VS Dark+/Light+, One Dark Pro/Quiet Light, Monokai/Solarized Light (TextMate)
@@ -150,7 +150,7 @@ Text(annotated, fontFamily = Monospace)
 
 ```kotlin
 // gradle/libs.versions.toml
-compose-highlight = { group = "com.github.hossain-khan", name = "android-compose-highlight", version = "0.5.0" }
+compose-highlight = { group = "com.github.hossain-khan", name = "android-compose-highlight", version = "0.9.0" }
 ```
 
 Distributed via [JitPack](https://jitpack.io/#hossain-khan/android-compose-highlight).
@@ -175,7 +175,7 @@ Distributed via [JitPack](https://jitpack.io/#hossain-khan/android-compose-highl
 ```
 app/src/main/java/dev/hossain/syntaxhighlight/
 ├── MainActivity.kt                      # Entry point; sets up Circuit navigation stack
-├── SyntaxHighlightApp.kt                # Application class; creates Metro app graph and schedules background work
+├── SyntaxHighlightApp.kt                # Application class; creates Metro app graph and pre-warms WebView
 ├── circuit/
 │   ├── home/
 │   │   └── HomeScreen.kt                # Home screen — lists the four highlighting approaches
@@ -185,7 +185,7 @@ app/src/main/java/dev/hossain/syntaxhighlight/
 │   ├── textmate/
 │   │   └── TextMateHighlightScreen.kt   # 📴 TextMate demo: loads grammars/themes, tokenizes on-device
 │   ├── comparison/
-│   │   └── ComparisonScreen.kt          # Side-by-side Shiki vs TextMate comparison with metrics
+│   │   └── ComparisonScreen.kt          # Side-by-side comparison of all three highlighting approaches
 │   ├── composehighlight/
 │   │   └── ComposeHighlightScreen.kt    # 🌐 Compose Highlight demo: Highlight.js via WebView, 190+ languages
 │   └── overlay/
@@ -198,13 +198,9 @@ app/src/main/java/dev/hossain/syntaxhighlight/
 │       └── ShikiRepositoryImpl.kt       # Wraps ShikiClient, calls /highlight/dual
 ├── di/
 │   ├── AppGraph.kt                      # Root Metro dependency graph (AppScope)
-│   ├── AppWorkerFactory.kt              # Custom WorkerFactory for Metro-injected workers
 │   ├── ActivityKey.kt                   # Map key annotation for Activity multibinding
 │   ├── CircuitProviders.kt              # Metro bindings for Circuit (presenter/UI factories)
-│   ├── ComposeAppComponentFactory.kt    # AppComponentFactory enabling Activity constructor injection
-│   └── WorkerKey.kt                     # Map key annotation for Worker multibinding
-└── work/
-    └── SampleWorker.kt                  # Example CoroutineWorker with assisted injection
+│   └── ComposeAppComponentFactory.kt    # AppComponentFactory enabling Activity constructor injection
 
 app/src/main/assets/
 ├── grammars/                            # TextMate grammar files (.tmLanguage.json)
