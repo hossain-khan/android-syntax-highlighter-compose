@@ -162,11 +162,6 @@ metro {
     // Enable Metro's built-in Circuit codegen support (introduced in Metro 0.13.0).
     // This replaces the circuit-codegen KSP processor and the circuit.codegen.mode=metro KSP arg.
     // See https://zacsweers.github.io/metro/latest/circuit/
-    enableCircuitCodegen.set(true)
-
-    // Shrink unused bindings to reduce generated code size (delicate API in Metro 0.11+)
-    // This is a delicate API - use with caution in large dependency graphs
-    // See https://zacsweers.github.io/metro/latest/dependency-graphs/
     @Suppress("DelicateApi")
-    shrinkUnusedBindings.set(true)
+    enableCircuitCodegen.set(true)
 }
