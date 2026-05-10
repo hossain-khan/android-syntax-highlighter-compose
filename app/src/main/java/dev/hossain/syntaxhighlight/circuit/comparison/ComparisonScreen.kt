@@ -41,12 +41,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -58,6 +60,9 @@ import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
+import dev.hossain.highlight.engine.HighlightTheme
+import dev.hossain.highlight.engine.ThemedHighlightResult
+import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
 import dev.hossain.shiki.model.HighlightDualResponse
 import dev.hossain.shiki.model.Theme
 import dev.hossain.syntaxhighlight.R
@@ -103,11 +108,13 @@ private val comparisonSamples: List<CodeSample> =
     CodeSamples.all.filter { sample -> textMateSamples.any { it.label == sample.label } }
 
 /**
- * Screen that renders a side-by-side comparison of both syntax highlighting approaches:
- * the cloud-based [Shiki Token Service][dev.hossain.syntaxhighlight.data.shiki.ShikiRepository]
- * and the on-device [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) library.
+ * Screen that renders a side-by-side comparison of all three syntax highlighting approaches:
+ * the cloud-based [Shiki Token Service][dev.hossain.syntaxhighlight.data.shiki.ShikiRepository],
+ * the on-device [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) library, and
+ * the on-device [compose-highlight](https://github.com/hossain-khan/android-compose-highlight)
+ * library (Highlight.js via WebView).
  *
- * The screen shows the same code snippet tokenized by both approaches, together with timing
+ * The screen shows the same code snippet tokenized by all three approaches, together with timing
  * metrics and a device-footprint breakdown so users can easily evaluate the trade-offs.
  */
 @Parcelize
@@ -307,7 +314,7 @@ fun Comparison(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Compare Approaches") },
+                title = { Text("Compare All Highlights") },
                 navigationIcon = {
                     IconButton(onClick = { state.eventSink(ComparisonScreen.Event.NavigateBack) }) {
                         Icon(
@@ -319,56 +326,57 @@ fun Comparison(
             )
         },
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item {
-                Spacer(modifier = Modifier.height(4.dp))
-                SampleDropdown(
-                    samples = state.availableSamples,
-                    selected = state.selectedSample,
-                    onSelect = { state.eventSink(ComparisonScreen.Event.SampleSelected(it)) },
-                )
-            }
+            Spacer(modifier = Modifier.height(4.dp))
+            SampleDropdown(
+                samples = state.availableSamples,
+                selected = state.selectedSample,
+                onSelect = { state.eventSink(ComparisonScreen.Event.SampleSelected(it)) },
+            )
 
-            item {
-                ApproachSectionHeader(
-                    icon = R.drawable.cloud_24dp,
-                    label = "Cloud — Shiki Token Service",
-                )
-            }
+            ApproachSectionHeader(
+                icon = R.drawable.cloud_24dp,
+                label = "Cloud — Shiki Token Service",
+            )
 
-            item {
-                ShikiApproachCard(
-                    sample = state.selectedSample,
-                    shikiState = state.shikiState,
-                    isDark = state.isDark,
-                    onRetry = { state.eventSink(ComparisonScreen.Event.RetryShiki) },
-                )
-            }
+            ShikiApproachCard(
+                sample = state.selectedSample,
+                shikiState = state.shikiState,
+                isDark = state.isDark,
+                onRetry = { state.eventSink(ComparisonScreen.Event.RetryShiki) },
+            )
 
-            item {
-                ApproachSectionHeader(
-                    icon = R.drawable.cloud_off_24dp,
-                    label = "On-Device — TextMate (kotlin-textmate)",
-                )
-            }
+            ApproachSectionHeader(
+                icon = R.drawable.cloud_off_24dp,
+                label = "On-Device — TextMate (kotlin-textmate)",
+            )
 
-            item {
-                TextMateApproachCard(
-                    sample = state.selectedSample,
-                    textMateState = state.textMateState,
-                    isDark = state.isDark,
-                    onRetry = { state.eventSink(ComparisonScreen.Event.RetryTextMate) },
-                )
-            }
+            TextMateApproachCard(
+                sample = state.selectedSample,
+                textMateState = state.textMateState,
+                isDark = state.isDark,
+                onRetry = { state.eventSink(ComparisonScreen.Event.RetryTextMate) },
+            )
 
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+            ApproachSectionHeader(
+                icon = R.drawable.code_24dp,
+                label = "On-Device — Compose Highlight (Highlight.js)",
+            )
+
+            ComposeHighlightApproachCard(
+                sample = state.selectedSample,
+                isDark = state.isDark,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -494,6 +502,61 @@ private fun TextMateApproachCard(
 }
 
 // ---------------------------------------------------------------------------
+// Compose Highlight approach card
+// ---------------------------------------------------------------------------
+
+/** Maps a [CodeSample] label to the corresponding Highlight.js language identifier. */
+private fun CodeSample.toHighlightJsLanguage(): String =
+    when (label) {
+        "Kotlin" -> "kotlin"
+        "Python" -> "python"
+        "JSON" -> "json"
+        "JavaScript" -> "javascript"
+        else -> label.lowercase()
+    }
+
+/** Approximate size of the compose-highlight library (WebView-based, no grammar assets). */
+private const val COMPOSE_HIGHLIGHT_LIBRARY_BYTES = 50_000L
+
+@Composable
+private fun ComposeHighlightApproachCard(
+    sample: CodeSample,
+    isDark: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val (lightTheme, darkTheme) =
+        remember(context) {
+            HighlightTheme.tomorrow(context) to HighlightTheme.tomorrowNight(context)
+        }
+    var highlightMs by remember { mutableLongStateOf(0L) }
+
+    val themedResult by rememberHighlightedCodeBothThemes(
+        code = sample.code,
+        language = sample.toHighlightJsLanguage(),
+        lightTheme = lightTheme,
+        darkTheme = darkTheme,
+        onHighlightComplete = { durationMs -> highlightMs = durationMs },
+    )
+
+    val annotatedCode = if (isDark) themedResult?.dark else themedResult?.light
+    val activeTheme = if (isDark) darkTheme else lightTheme
+    val bgColor = activeTheme.backgroundColor.takeIf { it != Color.Unspecified } ?: Color(0xFF1E1E1E)
+
+    ElevatedCard(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            if (annotatedCode == null) {
+                LoadingContent(label = "Highlighting via Highlight.js WebView…")
+            } else {
+                CodePreview(annotated = annotatedCode, bgColor = bgColor)
+                Spacer(modifier = Modifier.height(10.dp))
+                ComposeHighlightInfoCard(highlightMs = highlightMs)
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Code preview
 // ---------------------------------------------------------------------------
 
@@ -583,6 +646,35 @@ private fun TextMateInfoCard(
             InfoRow(label = "📡  Internet", value = "Not required")
             InfoRow(label = "🌐  Languages", value = "TextMate grammar compatible")
             InfoRow(label = "🎨  Themes", value = "VS Code JSON compatible")
+        }
+    }
+}
+
+@Composable
+private fun ComposeHighlightInfoCard(
+    highlightMs: Long,
+    modifier: Modifier = Modifier,
+) {
+    val libKb = COMPOSE_HIGHLIGHT_LIBRARY_BYTES / 1000L
+    InfoCard(modifier = modifier) {
+        InfoSection(title = "Performance") {
+            InfoRow(label = "⏱  WebView JS round-trip", value = "${highlightMs}ms", emphasized = true)
+            InfoSubtitle("Single shared WebView — one initialization cost shared across all blocks.")
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        InfoSection(title = "Device Footprint (approx.)") {
+            InfoRow(label = "📄  Grammar files", value = "0 KB")
+            InfoRow(label = "🎨  Theme files", value = "0 KB")
+            InfoRow(label = "📚  Library (incl. Highlight.js)", value = "~$libKb KB")
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            InfoRow(label = "📦  Total", value = "~$libKb KB", emphasized = true)
+            InfoSubtitle("190+ languages and themes are bundled inside the library — no assets to manage.")
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        InfoSection(title = "Capabilities") {
+            InfoRow(label = "📡  Internet", value = "Not required")
+            InfoRow(label = "🌐  Languages", value = "190+ (Highlight.js built-in)")
+            InfoRow(label = "🎨  Themes", value = "Highlight.js themes")
         }
     }
 }
