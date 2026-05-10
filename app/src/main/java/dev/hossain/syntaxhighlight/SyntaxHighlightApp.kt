@@ -7,15 +7,7 @@ import androidx.webkit.WebViewOutcomeReceiver
 import androidx.webkit.WebViewStartUpConfig
 import androidx.webkit.WebViewStartUpResult
 import androidx.webkit.WebViewStartupException
-import androidx.work.Configuration
-import androidx.work.Constraints
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.OutOfQuotaPolicy
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import dev.hossain.syntaxhighlight.di.AppGraph
-import dev.hossain.syntaxhighlight.work.SampleWorker
 import dev.zacsweers.metro.createGraphFactory
 import java.util.concurrent.Executors
 
@@ -30,9 +22,7 @@ private const val TAG = "SyntaxHighlightApp"
  *
  * See https://zacsweers.github.io/metro/latest/dependency-graphs/ for more on creating graphs.
  */
-class SyntaxHighlightApp :
-    Application(),
-    Configuration.Provider {
+class SyntaxHighlightApp : Application() {
     /**
      * Lazily creates the Metro app graph using the factory pattern.
      *
@@ -46,13 +36,9 @@ class SyntaxHighlightApp :
 
     fun appGraph(): AppGraph = appGraph
 
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder().setWorkerFactory(appGraph.workerFactory).build()
-
     override fun onCreate() {
         super.onCreate()
         preWarmWebView()
-        scheduleBackgroundWork()
     }
 
     /**
@@ -87,24 +73,5 @@ class SyntaxHighlightApp :
         }.onFailure { e ->
             Log.e(TAG, "WebView pre-warming: failed to start", e)
         }
-    }
-
-    /**
-     * Schedules a background work request using the [WorkManager].
-     * This is just an example to demonstrate how to use WorkManager with Metro DI.
-     */
-    private fun scheduleBackgroundWork() {
-        val workRequest =
-            OneTimeWorkRequestBuilder<SampleWorker>()
-                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                .setInputData(workDataOf(SampleWorker.KEY_WORK_NAME to "Circuit App ${System.currentTimeMillis()}"))
-                .setConstraints(
-                    Constraints
-                        .Builder()
-                        .setRequiredNetworkType(NetworkType.CONNECTED)
-                        .build(),
-                ).build()
-
-        appGraph.workManager.enqueue(workRequest)
     }
 }

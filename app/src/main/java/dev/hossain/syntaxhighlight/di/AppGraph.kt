@@ -2,13 +2,11 @@ package dev.hossain.syntaxhighlight.di
 
 import android.app.Activity
 import android.content.Context
-import androidx.work.WorkManager
 import com.slack.circuit.foundation.Circuit
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Multibinds
 import dev.zacsweers.metro.Provider
-import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import kotlin.reflect.KClass
 
@@ -21,7 +19,6 @@ import kotlin.reflect.KClass
  * Key Metro features used:
  * - [DependencyGraph]: Marks this as a Metro dependency graph (similar to Dagger's @Component)
  * - [SingleIn]: Declares the scope for this graph (AppScope in this case)
- * - [Provides]: Functions that provide dependencies to the graph
  * - [DependencyGraph.Factory]: Factory interface for creating the graph with runtime inputs
  * - Multibindings: `activityProviders` is a map multibinding for Activity injection
  *
@@ -51,14 +48,6 @@ interface AppGraph {
      */
     val circuit: Circuit
 
-    val workManager: WorkManager
-    val workerFactory: AppWorkerFactory
-
-    @Provides
-    fun providesWorkManager(
-        @ApplicationContext context: Context,
-    ): WorkManager = WorkManager.getInstance(context)
-
     /**
      * Factory for creating the [AppGraph] with runtime inputs.
      *
@@ -70,7 +59,7 @@ interface AppGraph {
     @DependencyGraph.Factory
     interface Factory {
         fun create(
-            @ApplicationContext @Provides context: Context,
+            @ApplicationContext @dev.zacsweers.metro.Provides context: Context,
         ): AppGraph
     }
 }

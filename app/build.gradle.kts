@@ -126,8 +126,6 @@ dependencies {
 
     implementation(libs.javax.inject)
 
-    implementation(libs.androidx.work)
-
     // Shiki Token Service SDK - server-driven syntax highlighting
     implementation(libs.shiki.sdk)
 
