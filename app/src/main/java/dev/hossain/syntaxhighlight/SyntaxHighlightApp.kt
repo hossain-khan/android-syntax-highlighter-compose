@@ -17,6 +17,7 @@ import androidx.work.workDataOf
 import dev.hossain.syntaxhighlight.di.AppGraph
 import dev.hossain.syntaxhighlight.work.SampleWorker
 import dev.zacsweers.metro.createGraphFactory
+import java.util.concurrent.Executors
 
 private const val TAG = "SyntaxHighlightApp"
 
@@ -66,7 +67,7 @@ class SyntaxHighlightApp :
         runCatching {
             WebViewCompat.startUpWebView(
                 applicationContext,
-                WebViewStartUpConfig.Builder(mainExecutor).build(),
+                WebViewStartUpConfig.Builder(Executors.newSingleThreadExecutor()).build(),
                 object : WebViewOutcomeReceiver<WebViewStartUpResult, WebViewStartupException> {
                     override fun onResult(result: WebViewStartUpResult) {
                         val elapsed = System.currentTimeMillis() - startMs
