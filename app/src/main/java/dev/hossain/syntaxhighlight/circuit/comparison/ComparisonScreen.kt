@@ -61,6 +61,7 @@ import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.highlight.engine.HighlightTheme
+import dev.hossain.highlight.engine.ThemedHighlightResult
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
 import dev.hossain.shiki.model.HighlightDualResponse
 import dev.hossain.shiki.model.Theme
@@ -325,6 +326,22 @@ fun Comparison(
             )
         },
     ) { innerPadding ->
+        val context = LocalContext.current
+        val (lightTheme, darkTheme) =
+            remember(context) {
+                HighlightTheme.tomorrow(context) to HighlightTheme.tomorrowNight(context)
+            }
+        var composeHighlightMs by remember { mutableLongStateOf(0L) }
+        // Hoisted outside LazyColumn so the WebView engine warms up immediately when this screen
+        // opens, not lazily when the user scrolls to the Compose Highlight section.
+        val composeHighlightResult by rememberHighlightedCodeBothThemes(
+            code = state.selectedSample.code,
+            language = state.selectedSample.toHighlightJsLanguage(),
+            lightTheme = lightTheme,
+            darkTheme = darkTheme,
+            onHighlightComplete = { durationMs -> composeHighlightMs = durationMs },
+        )
+
         LazyColumn(
             modifier =
                 Modifier
@@ -385,6 +402,8 @@ fun Comparison(
                 ComposeHighlightApproachCard(
                     sample = state.selectedSample,
                     isDark = state.isDark,
+                    themedResult = composeHighlightResult,
+                    highlightMs = composeHighlightMs,
                 )
             }
 
@@ -534,22 +553,15 @@ private const val COMPOSE_HIGHLIGHT_LIBRARY_BYTES = 50_000L
 private fun ComposeHighlightApproachCard(
     sample: CodeSample,
     isDark: Boolean,
+    themedResult: ThemedHighlightResult?,
+    highlightMs: Long,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val (lightTheme, darkTheme) =
-        remember {
+        remember(context) {
             HighlightTheme.tomorrow(context) to HighlightTheme.tomorrowNight(context)
         }
-    var highlightMs by remember { mutableLongStateOf(0L) }
-
-    val themedResult by rememberHighlightedCodeBothThemes(
-        code = sample.code,
-        language = sample.toHighlightJsLanguage(),
-        lightTheme = lightTheme,
-        darkTheme = darkTheme,
-        onHighlightComplete = { durationMs -> highlightMs = durationMs },
-    )
 
     val annotatedCode = if (isDark) themedResult?.dark else themedResult?.light
     val activeTheme = if (isDark) darkTheme else lightTheme
