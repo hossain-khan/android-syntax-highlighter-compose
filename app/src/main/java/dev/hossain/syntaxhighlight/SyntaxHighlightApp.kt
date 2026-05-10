@@ -72,6 +72,10 @@ class SyntaxHighlightApp :
                     override fun onResult(result: WebViewStartUpResult) {
                         val elapsed = System.currentTimeMillis() - startMs
                         Log.d(TAG, "WebView pre-warming: completed in ${elapsed}ms")
+                        Log.d(TAG, "  totalTimeInUiThread=${result.totalTimeInUiThreadMillis}ms")
+                        Log.d(TAG, "  maxTimePerTaskInUiThread=${result.maxTimePerTaskInUiThreadMillis}ms")
+                        Log.d(TAG, "  uiThreadBlockingLocations=${result.uiThreadBlockingStartUpLocations}")
+                        Log.d(TAG, "  nonUiThreadBlockingLocations=${result.nonUiThreadBlockingStartUpLocations}")
                     }
 
                     override fun onError(error: WebViewStartupException) {
