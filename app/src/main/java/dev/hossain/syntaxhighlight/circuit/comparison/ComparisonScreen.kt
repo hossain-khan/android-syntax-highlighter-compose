@@ -326,88 +326,57 @@ fun Comparison(
             )
         },
     ) { innerPadding ->
-        val context = LocalContext.current
-        val (lightTheme, darkTheme) =
-            remember(context) {
-                HighlightTheme.tomorrow(context) to HighlightTheme.tomorrowNight(context)
-            }
-        var composeHighlightMs by remember { mutableLongStateOf(0L) }
-        // Hoisted outside LazyColumn so the WebView engine warms up immediately when this screen
-        // opens, not lazily when the user scrolls to the Compose Highlight section.
-        val composeHighlightResult by rememberHighlightedCodeBothThemes(
-            code = state.selectedSample.code,
-            language = state.selectedSample.toHighlightJsLanguage(),
-            lightTheme = lightTheme,
-            darkTheme = darkTheme,
-            onHighlightComplete = { durationMs -> composeHighlightMs = durationMs },
-        )
-
-        LazyColumn(
+        Column(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item {
-                Spacer(modifier = Modifier.height(4.dp))
-                SampleDropdown(
-                    samples = state.availableSamples,
-                    selected = state.selectedSample,
-                    onSelect = { state.eventSink(ComparisonScreen.Event.SampleSelected(it)) },
-                )
-            }
+            Spacer(modifier = Modifier.height(4.dp))
+            SampleDropdown(
+                samples = state.availableSamples,
+                selected = state.selectedSample,
+                onSelect = { state.eventSink(ComparisonScreen.Event.SampleSelected(it)) },
+            )
 
-            item {
-                ApproachSectionHeader(
-                    icon = R.drawable.cloud_24dp,
-                    label = "Cloud — Shiki Token Service",
-                )
-            }
+            ApproachSectionHeader(
+                icon = R.drawable.cloud_24dp,
+                label = "Cloud — Shiki Token Service",
+            )
 
-            item {
-                ShikiApproachCard(
-                    sample = state.selectedSample,
-                    shikiState = state.shikiState,
-                    isDark = state.isDark,
-                    onRetry = { state.eventSink(ComparisonScreen.Event.RetryShiki) },
-                )
-            }
+            ShikiApproachCard(
+                sample = state.selectedSample,
+                shikiState = state.shikiState,
+                isDark = state.isDark,
+                onRetry = { state.eventSink(ComparisonScreen.Event.RetryShiki) },
+            )
 
-            item {
-                ApproachSectionHeader(
-                    icon = R.drawable.cloud_off_24dp,
-                    label = "On-Device — TextMate (kotlin-textmate)",
-                )
-            }
+            ApproachSectionHeader(
+                icon = R.drawable.cloud_off_24dp,
+                label = "On-Device — TextMate (kotlin-textmate)",
+            )
 
-            item {
-                TextMateApproachCard(
-                    sample = state.selectedSample,
-                    textMateState = state.textMateState,
-                    isDark = state.isDark,
-                    onRetry = { state.eventSink(ComparisonScreen.Event.RetryTextMate) },
-                )
-            }
+            TextMateApproachCard(
+                sample = state.selectedSample,
+                textMateState = state.textMateState,
+                isDark = state.isDark,
+                onRetry = { state.eventSink(ComparisonScreen.Event.RetryTextMate) },
+            )
 
-            item {
-                ApproachSectionHeader(
-                    icon = R.drawable.code_24dp,
-                    label = "On-Device — Compose Highlight (Highlight.js)",
-                )
-            }
+            ApproachSectionHeader(
+                icon = R.drawable.code_24dp,
+                label = "On-Device — Compose Highlight (Highlight.js)",
+            )
 
-            item {
-                ComposeHighlightApproachCard(
-                    sample = state.selectedSample,
-                    isDark = state.isDark,
-                    themedResult = composeHighlightResult,
-                    highlightMs = composeHighlightMs,
-                )
-            }
+            ComposeHighlightApproachCard(
+                sample = state.selectedSample,
+                isDark = state.isDark,
+            )
 
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -553,8 +522,6 @@ private const val COMPOSE_HIGHLIGHT_LIBRARY_BYTES = 50_000L
 private fun ComposeHighlightApproachCard(
     sample: CodeSample,
     isDark: Boolean,
-    themedResult: ThemedHighlightResult?,
-    highlightMs: Long,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -562,6 +529,15 @@ private fun ComposeHighlightApproachCard(
         remember(context) {
             HighlightTheme.tomorrow(context) to HighlightTheme.tomorrowNight(context)
         }
+    var highlightMs by remember { mutableLongStateOf(0L) }
+
+    val themedResult by rememberHighlightedCodeBothThemes(
+        code = sample.code,
+        language = sample.toHighlightJsLanguage(),
+        lightTheme = lightTheme,
+        darkTheme = darkTheme,
+        onHighlightComplete = { durationMs -> highlightMs = durationMs },
+    )
 
     val annotatedCode = if (isDark) themedResult?.dark else themedResult?.light
     val activeTheme = if (isDark) darkTheme else lightTheme
