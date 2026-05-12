@@ -150,10 +150,10 @@ Text(annotated, fontFamily = Monospace)
 
 ```kotlin
 // gradle/libs.versions.toml
-compose-highlight = { group = "com.github.hossain-khan", name = "android-compose-highlight", version = "0.9.0" }
+compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.13.0" }
 ```
 
-Distributed via [JitPack](https://jitpack.io/#hossain-khan/android-compose-highlight).
+Distributed via [Maven Central](https://central.sonatype.com/artifact/dev.hossain/compose-highlight).
 
 ---
 
@@ -193,12 +193,17 @@ app/src/main/java/dev/hossain/syntaxhighlight/
 ├── data/
 │   ├── samples/
 │   │   └── CodeSamples.kt               # Hardcoded Kotlin/Python/JSON/JS snippets
-│   └── shiki/
-│       ├── ShikiRepository.kt           # Interface
-│       └── ShikiRepositoryImpl.kt       # Wraps ShikiClient, calls /highlight/dual
+│   ├── shiki/
+│   │   ├── ShikiRepository.kt           # Interface
+│   │   └── ShikiRepositoryImpl.kt       # Wraps ShikiClient, calls /highlight/dual
+│   └── textmate/
+│       ├── TextMateRepository.kt        # Interface for loading grammar and theme assets
+│       ├── TextMateRepositoryImpl.kt    # Reads grammar/theme files from assets/
+│       └── TextMateAssets.kt            # TextMateSample, TextMateThemePair definitions and defaults
 ├── di/
 │   ├── AppGraph.kt                      # Root Metro dependency graph (AppScope)
 │   ├── ActivityKey.kt                   # Map key annotation for Activity multibinding
+│   ├── ApplicationContext.kt            # Qualifier annotation for Application Context
 │   ├── CircuitProviders.kt              # Metro bindings for Circuit (presenter/UI factories)
 │   └── ComposeAppComponentFactory.kt    # AppComponentFactory enabling Activity constructor injection
 

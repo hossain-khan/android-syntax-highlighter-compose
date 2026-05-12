@@ -1,6 +1,6 @@
 # Dev Container Configuration
 
-This directory contains the development container configuration for Android Compose App Template.
+This directory contains the development container configuration for Android Syntax Highlighter (Compose).
 
 ## Features
 

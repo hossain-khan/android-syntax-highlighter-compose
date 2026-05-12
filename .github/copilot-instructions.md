@@ -1,8 +1,8 @@
 # Project Overview
 
-This is a template for an Android app using Jetpack Compose, designed to help you quickly set up a new project with best practices in mind. It includes features like dependency injection, Circuit UDF (Unidirectional Data Flow) architecture, and optional WorkManager integration.
+This is an Android app showcasing multiple syntax highlighting approaches in Jetpack Compose. It demonstrates dependency injection with Metro, Circuit UDF (Unidirectional Data Flow) architecture, and WebView integration.
 
-The template is pre-configured with Circuit, a Compose-driven architecture for Kotlin and Android applications that provides a clean, unidirectional data flow pattern for building robust Android apps.
+The app is built with Circuit, a Compose-driven architecture for Kotlin and Android applications that provides a clean, unidirectional data flow pattern for building robust Android apps.
 
 ## Project Structure
 
@@ -12,7 +12,7 @@ android-syntax-highlighter-compose/
 │   └── src/
 │       └── main/java/dev/hossain/syntaxhighlight/
 │           ├── MainActivity.kt              # Entry point; sets up Circuit navigation stack
-│           ├── SyntaxHighlightApp.kt        # Application class; Metro graph creation + WorkManager init
+│           ├── SyntaxHighlightApp.kt        # Application class; Metro graph creation + WebView pre-warming
 │           ├── circuit/                     # Circuit screens and presenters
 │           │   ├── home/
 │           │   │   └── HomeScreen.kt        # Home screen listing the four approaches
@@ -22,25 +22,26 @@ android-syntax-highlighter-compose/
 │           │   ├── textmate/
 │           │   │   └── TextMateHighlightScreen.kt # On-device TextMate highlighting screen
 │           │   ├── comparison/
-│           │   │   └── ComparisonScreen.kt  # Side-by-side Shiki vs TextMate comparison
+│           │   │   └── ComparisonScreen.kt  # Side-by-side comparison of all three highlighting approaches
 │           │   ├── composehighlight/
 │           │   │   └── ComposeHighlightScreen.kt  # On-device Highlight.js highlighting screen (compose-highlight library)
 │           │   └── overlay/                 # Circuit overlays
 │           │       └── AppInfoOverlay.kt    # Bottom-sheet app-info overlay (example)
 │           ├── data/                        # Repositories and data sources
 │           │   ├── samples/CodeSamples.kt   # Hardcoded code snippets (Kotlin/Python/JSON/JS)
-│           │   └── shiki/
-│           │       ├── ShikiRepository.kt   # Interface
-│           │       └── ShikiRepositoryImpl.kt # Calls /highlight/dual via ShikiClient
-│           ├── di/                          # Metro dependency injection
-│           │   ├── AppGraph.kt              # Root dependency graph (AppScope)
-│           │   ├── CircuitProviders.kt      # Circuit presenter/UI factory multibindings
-│           │   ├── ComposeAppComponentFactory.kt # Activity constructor injection via Metro
-│           │   ├── AppWorkerFactory.kt      # Custom WorkerFactory for Metro-injected workers
-│           │   ├── ActivityKey.kt           # Map key for Activity multibinding
-│           │   └── WorkerKey.kt             # Map key for Worker multibinding
-│           └── work/
-│               └── SampleWorker.kt          # Example CoroutineWorker with assisted injection
+│           │   ├── shiki/
+│           │   │   ├── ShikiRepository.kt   # Interface
+│           │   │   └── ShikiRepositoryImpl.kt # Calls /highlight/dual via ShikiClient
+│           │   └── textmate/
+│           │       ├── TextMateRepository.kt    # Interface for loading grammar and theme assets
+│           │       ├── TextMateRepositoryImpl.kt # Reads grammar/theme files from assets/
+│           │       └── TextMateAssets.kt        # TextMateSample, TextMateThemePair definitions and defaults
+│           └── di/                          # Metro dependency injection
+│               ├── AppGraph.kt              # Root dependency graph (AppScope)
+│               ├── ActivityKey.kt           # Map key for Activity multibinding
+│               ├── ApplicationContext.kt    # Qualifier annotation for Application Context
+│               ├── CircuitProviders.kt      # Circuit presenter/UI factory multibindings
+│               └── ComposeAppComponentFactory.kt # Activity constructor injection via Metro
 └── gradle/
     └── libs.versions.toml                   # Centralized dependency versions
 ```
@@ -197,13 +198,12 @@ Card(colors = CardDefaults.cardColors(containerColor = Color.Blue)) {
 All dependency versions are centralized in `gradle/libs.versions.toml`:
 
 **Major Dependencies**:
-- Android Gradle Plugin (AGP): 9.1.1 (supports built-in Kotlin)
-- Kotlin: 2.3.20 (latest stable)
-- KSP: 2.3.6
+- Android Gradle Plugin (AGP): 9.2.1 (supports built-in Kotlin)
+- Kotlin: 2.3.21 (latest stable)
+- KSP: 2.3.7
 - Circuit: 0.33.1
-- Metro: 0.13.2 (latest)
-- Compose BOM: 2026.03.01
-- WorkManager: 2.11.2
+- Metro: 1.0.0 (latest)
+- Compose BOM: 2026.05.00
 - Gradle: 9.4.1 (minimum required: 9.3.1)
 
 ## Common Patterns
@@ -215,13 +215,6 @@ All dependency versions are centralized in `gradle/libs.versions.toml`:
 3. Create a `@CircuitInject` composable UI function
 4. Navigate using `Navigator.goTo(screen)`
 
-### Adding a WorkManager Worker
-
-1. Use `@AssistedInject` for constructor injection
-2. Add `@WorkerKey` annotation
-3. Implement `CoroutineWorker` or `Worker`
-4. Schedule work using `WorkManager`
-
 ## Resources
 
 - [Circuit Documentation](https://slackhq.github.io/circuit/)
@@ -229,7 +222,6 @@ All dependency versions are centralized in `gradle/libs.versions.toml`:
 - [Compose Documentation](https://developer.android.com/jetpack/compose)
 - [Material 3 Design System](https://m3.material.io/)
 - [Material 3 Compose Components](https://developer.android.com/jetpack/compose/designsystems/material3)
-- [WorkManager Guide](https://developer.android.com/topic/libraries/architecture/workmanager)
 
 ## Notes for AI Assistants
 
@@ -240,9 +232,9 @@ All dependency versions are centralized in `gradle/libs.versions.toml`:
 - Follow existing code structure and patterns
 - Keep code concise and readable
 
-## AGP 9.1.0 - Built-in Kotlin Support
+## AGP 9.2.1 - Built-in Kotlin Support
 
-This project has been migrated to AGP 9.1.0 with **built-in Kotlin support**. Key points:
+This project uses AGP 9.2.1 with **built-in Kotlin support**. Key points:
 
 1. **No `kotlin-android` plugin needed** — AGP 9.1+ includes native Kotlin compilation support
 2. **KAPT is incompatible** — Built-in Kotlin doesn't support `kotlin-kapt`. This project uses Metro with KSP instead
