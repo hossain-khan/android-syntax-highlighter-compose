@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -58,8 +57,11 @@ import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
-import dev.hossain.highlight.engine.HighlightTheme
+import dev.hossain.highlight.ui.rememberAtomOneDarkTheme
+import dev.hossain.highlight.ui.rememberAtomOneLightTheme
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
+import dev.hossain.highlight.ui.rememberTomorrowNightTheme
+import dev.hossain.highlight.ui.rememberTomorrowTheme
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.data.samples.CodeSample
 import dev.hossain.syntaxhighlight.data.samples.CodeSamples
@@ -234,23 +236,17 @@ private fun ReadyContent(
     state: ComposeHighlightScreen.State.Ready,
     innerPadding: PaddingValues,
 ) {
-    val context = LocalContext.current
+    val tomorrowLight = rememberTomorrowTheme()
+    val tomorrowNight = rememberTomorrowNightTheme()
+    val atomOneLight = rememberAtomOneLightTheme()
+    val atomOneDark = rememberAtomOneDarkTheme()
 
     val (lightTheme, darkTheme) =
-        remember(state.selectedThemePair) {
-            when (state.selectedThemePair) {
-                ComposeHighlightThemePair.TOMORROW -> {
-                    HighlightTheme.tomorrow(context) to HighlightTheme.tomorrowNight(context)
-                }
-
-                ComposeHighlightThemePair.ATOM_ONE -> {
-                    HighlightTheme.atomOneLight(context) to HighlightTheme.atomOneDark(context)
-                }
-            }
+        when (state.selectedThemePair) {
+            ComposeHighlightThemePair.TOMORROW -> tomorrowLight to tomorrowNight
+            ComposeHighlightThemePair.ATOM_ONE -> atomOneLight to atomOneDark
         }
     val hlLanguage = state.selectedSample.toHighlightJsLanguage()
-
-    var highlightMs by remember { mutableStateOf<Long?>(null) }
 
     // Single JS call produces both light + dark AnnotatedStrings; theme switching is instant.
     val themedResult by rememberHighlightedCodeBothThemes(
@@ -258,7 +254,6 @@ private fun ReadyContent(
         language = hlLanguage,
         lightTheme = lightTheme,
         darkTheme = darkTheme,
-        onHighlightComplete = { durationMs -> highlightMs = durationMs },
     )
 
     val annotatedCode = if (state.isDark) themedResult?.dark else themedResult?.light
@@ -330,7 +325,7 @@ private fun ReadyContent(
 
         HorizontalDivider()
         ComposeHighlightMetricsRow(
-            highlightMs = highlightMs,
+            highlightMs = themedResult?.durationMs,
             code = state.selectedSample.code,
             modifier =
                 Modifier

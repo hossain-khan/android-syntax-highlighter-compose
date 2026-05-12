@@ -41,14 +41,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -60,9 +58,9 @@ import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
-import dev.hossain.highlight.engine.HighlightTheme
-import dev.hossain.highlight.engine.ThemedHighlightResult
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
+import dev.hossain.highlight.ui.rememberTomorrowNightTheme
+import dev.hossain.highlight.ui.rememberTomorrowTheme
 import dev.hossain.shiki.model.HighlightDualResponse
 import dev.hossain.shiki.model.Theme
 import dev.hossain.syntaxhighlight.R
@@ -524,19 +522,14 @@ private fun ComposeHighlightApproachCard(
     isDark: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val (lightTheme, darkTheme) =
-        remember(context) {
-            HighlightTheme.tomorrow(context) to HighlightTheme.tomorrowNight(context)
-        }
-    var highlightMs by remember { mutableLongStateOf(0L) }
+    val lightTheme = rememberTomorrowTheme()
+    val darkTheme = rememberTomorrowNightTheme()
 
     val themedResult by rememberHighlightedCodeBothThemes(
         code = sample.code,
         language = sample.toHighlightJsLanguage(),
         lightTheme = lightTheme,
         darkTheme = darkTheme,
-        onHighlightComplete = { durationMs -> highlightMs = durationMs },
     )
 
     val annotatedCode = if (isDark) themedResult?.dark else themedResult?.light
@@ -550,7 +543,7 @@ private fun ComposeHighlightApproachCard(
             } else {
                 CodePreview(annotated = annotatedCode, bgColor = bgColor)
                 Spacer(modifier = Modifier.height(10.dp))
-                ComposeHighlightInfoCard(highlightMs = highlightMs)
+                ComposeHighlightInfoCard(highlightMs = themedResult?.durationMs ?: 0L)
             }
         }
     }
