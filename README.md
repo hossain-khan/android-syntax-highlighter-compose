@@ -1,3 +1,5 @@
+[![](https://androidweekly.net/issues/issue-725/badge)](https://androidweekly.net/issues/issue-725)
+
 # Android Syntax Highlighter (Compose)
 
 An Android app that showcases three different **syntax highlighting** approaches for displaying code beautifully in Jetpack Compose:
