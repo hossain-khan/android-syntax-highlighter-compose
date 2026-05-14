@@ -4,7 +4,7 @@
 
 An Android app that showcases three different **syntax highlighting** approaches for displaying code beautifully in Jetpack Compose:
 
-1. ☁️ **Server-driven** — a hosted [Shiki Token Service](https://syntax-highlight.gohk.xyz) tokenizes code on the server and returns per-token colors; the app just renders them.
+1. ☁️ **Server-driven** — a hosted [Shiki Token Service](https://github.com/hossain-khan/shiki-token-service) tokenizes code on the server and returns per-token colors; the app just renders them.
 2. 📴 **On-device (TextMate)** — [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) applies TextMate grammars and themes locally with no network required.
 3. 🌐 **On-device (Highlight.js)** — [compose-highlight](https://github.com/hossain-khan/android-compose-highlight) runs [Highlight.js](https://highlightjs.org/) inside a hidden WebView and converts the tokenized HTML output to a native `AnnotatedString` — 190+ languages, no grammar files to maintain.
 
@@ -17,7 +17,7 @@ All approaches produce a Compose `AnnotatedString` and share the same code sampl
 
 ## Features
 
-- ☁️ **Server-driven highlighting** via [Shiki Token Service](https://syntax-highlight.gohk.xyz) — no grammar files on device
+- ☁️ **Server-driven highlighting** via [Shiki Token Service](https://github.com/hossain-khan/shiki-token-service) — no grammar files on device
 - 📴 **On-device highlighting** via [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) — fully offline, zero network calls
 - 🌐 **On-device highlighting** via [compose-highlight](https://github.com/hossain-khan/android-compose-highlight) — Highlight.js in a hidden WebView, 190+ languages, no grammar files to maintain
 - 🆚 **Side-by-side comparison** — compare all three approaches (Shiki, TextMate, Compose Highlight) output, performance, and device footprint together
