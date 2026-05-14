@@ -152,7 +152,7 @@ Text(annotated, fontFamily = Monospace)
 
 ```kotlin
 // gradle/libs.versions.toml
-compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.13.0" }
+compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.14.0" }
 ```
 
 Distributed via [Maven Central](https://central.sonatype.com/artifact/dev.hossain/compose-highlight).
