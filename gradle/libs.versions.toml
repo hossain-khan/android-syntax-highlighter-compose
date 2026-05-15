@@ -33,11 +33,6 @@ kotlinxSerializationJson = "1.11.0"
 # https://github.com/JakeWharton/retrofit2-kotlinx-serialization-converter
 retrofitKotlinxSerializationConverter = "1.0.0"
 
-joni = "2.2.7"
-jcodings = "1.0.64"
-# https://github.com/google/gson
-gson = "2.14.0"
-
 # Kotlin linter with built-in formatter
 # https://github.com/jeremymailen/kotlinter-gradle
 # https://github.com/pinterest/ktlint
@@ -101,13 +96,11 @@ shiki-sdk = { group = "com.github.hossain-khan.shiki-token-service", name = "sdk
 
 # compose-highlight - on-device syntax highlighting via Highlight.js WebView
 # https://github.com/hossain-khan/android-compose-highlight
-compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.14.0" }
+compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.15.0" }
 
-# kotlin-textmate transitive dependencies (required by core.jar local library)
+# kotlin-textmate - on-device TextMate grammar-based syntax highlighting
 # https://github.com/ivan-magda/kotlin-textmate
-textmate-joni = { group = "org.jruby.joni", name = "joni", version.ref = "joni" }
-textmate-jcodings = { group = "org.jruby.jcodings", name = "jcodings", version.ref = "jcodings" }
-textmate-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+kotlin-textmate-compose = { group = "io.github.ivan-magda", name = "kotlin-textmate-compose", version = "0.1.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -80,7 +80,7 @@ Distributed via [JitPack](https://jitpack.io/#hossain-khan/shiki-token-service).
 
 ### 📴 Approach 2: On-Device Highlighting (TextMate)
 
-[kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) is bundled as local JARs. Grammar files (`.tmLanguage.json`) and theme files are shipped in `assets/`. At runtime:
+[kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) is distributed via Maven Central. Grammar files (`.tmLanguage.json`) and theme files are shipped in `assets/`. At runtime:
 
 1. Grammar and theme files are loaded from assets on a background thread (`Dispatchers.IO`)
 2. `CodeHighlighter(grammar, theme).highlight(code)` tokenizes the source entirely on-device
@@ -152,7 +152,7 @@ Text(annotated, fontFamily = Monospace)
 
 ```kotlin
 // gradle/libs.versions.toml
-compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.14.0" }
+compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.15.0" }
 ```
 
 Distributed via [Maven Central](https://central.sonatype.com/artifact/dev.hossain/compose-highlight).
@@ -167,7 +167,7 @@ Distributed via [Maven Central](https://central.sonatype.com/artifact/dev.hossai
 | Architecture | [Circuit UDF](https://github.com/slackhq/circuit) (presenter + UI composable) |
 | Dependency Injection | [Metro](https://zacsweers.github.io/metro/) |
 | Server highlighting | [Shiki Token Service SDK](https://github.com/hossain-khan/shiki-token-service) (Ktor-based) |
-| On-device highlighting (TextMate) | [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) (local JARs) |
+| On-device highlighting (TextMate) | [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) (Maven Central) |
 | On-device highlighting (Highlight.js) | [compose-highlight](https://github.com/hossain-khan/android-compose-highlight) (WebView + Highlight.js) |
 | Networking | Ktor (via Shiki SDK) |
 | Min SDK | 28 (Android 9) |
@@ -214,10 +214,6 @@ app/src/main/assets/
 └── themes/                              # TextMate theme files
                                          #   dark_vs.json (base) + dark_plus.json, one_dark_pro.json, monokai.json (overlays)
                                          #   light_vs.json (base) + light_plus.json, quiet_light.json, solarized_light.json (overlays)
-
-app/libs/
-├── core.jar                             # kotlin-textmate core library
-└── compose-ui-release.aar               # kotlin-textmate Compose UI bindings
 ```
 
 ## Getting Started
