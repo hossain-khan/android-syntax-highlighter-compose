@@ -134,11 +134,9 @@ dependencies {
     implementation(libs.compose.highlight)
     implementation(libs.androidx.webkit)
 
-    // kotlin-textmate - local on-device syntax highlighting (core JAR + compose-ui AAR)
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
-    implementation(libs.textmate.joni)
-    implementation(libs.textmate.jcodings)
-    implementation(libs.textmate.gson)
+    // kotlin-textmate - on-device syntax highlighting via TextMate grammars
+    // https://github.com/ivan-magda/kotlin-textmate
+    implementation(libs.kotlin.textmate.compose)
 
     // Testing
     androidTestImplementation(libs.androidx.espresso.core)
