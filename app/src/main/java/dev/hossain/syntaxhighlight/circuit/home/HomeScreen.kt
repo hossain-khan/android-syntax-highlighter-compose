@@ -15,6 +15,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,25 +23,31 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.slack.circuit.codegen.annotations.CircuitInject
+import com.slack.circuit.overlay.LocalOverlayHost
 import com.slack.circuit.runtime.CircuitUiEvent
 import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
+import com.slack.circuitx.overlays.BottomSheetOverlay
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.circuit.comparison.ComparisonScreen
 import dev.hossain.syntaxhighlight.circuit.composehighlight.ComposeHighlightScreen
+import dev.hossain.syntaxhighlight.circuit.overlay.AppInfoBottomSheet
 import dev.hossain.syntaxhighlight.circuit.shiki.ShikiHighlightScreen
 import dev.hossain.syntaxhighlight.circuit.textmate.TextMateHighlightScreen
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 
 /**
@@ -66,6 +73,8 @@ data object HomeScreen : Screen {
         data object OpenComparison : Event
 
         data object OpenComposeHighlight : Event
+
+        data object ShowAppInfo : Event
     }
 }
 
@@ -79,16 +88,47 @@ class HomePresenter
     constructor(
         @Assisted private val navigator: Navigator,
     ) : Presenter<HomeScreen.State> {
+        @OptIn(ExperimentalMaterial3Api::class)
         @Composable
-        override fun present(): HomeScreen.State =
-            HomeScreen.State { event ->
-                when (event) {
-                    HomeScreen.Event.OpenShikiHighlight -> navigator.goTo(ShikiHighlightScreen)
-                    HomeScreen.Event.OpenTextMateHighlight -> navigator.goTo(TextMateHighlightScreen)
-                    HomeScreen.Event.OpenComparison -> navigator.goTo(ComparisonScreen)
-                    HomeScreen.Event.OpenComposeHighlight -> navigator.goTo(ComposeHighlightScreen)
+        override fun present(): HomeScreen.State {
+            val overlayHost = LocalOverlayHost.current
+            val scope = rememberCoroutineScope()
+
+            val eventSink: (HomeScreen.Event) -> Unit =
+                remember {
+                    { event ->
+                        when (event) {
+                            HomeScreen.Event.OpenShikiHighlight -> {
+                                navigator.goTo(ShikiHighlightScreen)
+                            }
+
+                            HomeScreen.Event.OpenTextMateHighlight -> {
+                                navigator.goTo(TextMateHighlightScreen)
+                            }
+
+                            HomeScreen.Event.OpenComparison -> {
+                                navigator.goTo(ComparisonScreen)
+                            }
+
+                            HomeScreen.Event.OpenComposeHighlight -> {
+                                navigator.goTo(ComposeHighlightScreen)
+                            }
+
+                            HomeScreen.Event.ShowAppInfo -> {
+                                scope.launch {
+                                    overlayHost.show(
+                                        BottomSheetOverlay(model = Unit, onDismiss = { Unit }) { _, _ ->
+                                            AppInfoBottomSheet()
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-            }
+
+            return HomeScreen.State(eventSink = eventSink)
+        }
 
         @CircuitInject(HomeScreen::class, AppScope::class)
         @AssistedFactory
@@ -153,7 +193,17 @@ fun Home(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(title = { Text("Syntax Highlight") })
+            TopAppBar(
+                title = { Text("Syntax Highlight") },
+                actions = {
+                    IconButton(onClick = { state.eventSink(HomeScreen.Event.ShowAppInfo) }) {
+                        Icon(
+                            painter = painterResource(R.drawable.info_24dp),
+                            contentDescription = "App info",
+                        )
+                    }
+                },
+            )
         },
     ) { innerPadding ->
         LazyColumn(
