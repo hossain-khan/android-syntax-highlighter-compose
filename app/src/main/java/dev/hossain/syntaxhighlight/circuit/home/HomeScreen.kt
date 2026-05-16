@@ -104,6 +104,45 @@ private data class HighlightApproach(
     val event: HomeScreen.Event,
 )
 
+// Constant list — hoisted out of the composable to avoid allocation on every recomposition.
+private val approaches =
+    listOf(
+        HighlightApproach(
+            title = "Shiki Server",
+            subtitle =
+                "Server-driven tokenization via Shiki Token Service. " +
+                    "Code is sent to the backend which returns colored tokens; " +
+                    "the app builds an AnnotatedString and renders it natively.",
+            iconRes = R.drawable.cloud_24dp,
+            event = HomeScreen.Event.OpenShikiHighlight,
+        ),
+        HighlightApproach(
+            title = "Kotlin TextMate",
+            subtitle =
+                "On-device tokenization using TextMate grammars and VS Code themes. " +
+                    "No network required — grammars and themes are bundled in the app assets.",
+            iconRes = R.drawable.cloud_off_24dp,
+            event = HomeScreen.Event.OpenTextMateHighlight,
+        ),
+        HighlightApproach(
+            title = "Compose Highlight",
+            subtitle =
+                "On-device highlighting via Highlight.js running in a hidden WebView. " +
+                    "190+ languages with no grammar files to maintain — just drop in the library.",
+            iconRes = R.drawable.cloud_off_24dp,
+            event = HomeScreen.Event.OpenComposeHighlight,
+        ),
+        HighlightApproach(
+            title = "Compare All Highlights",
+            subtitle =
+                "Side-by-side comparison of all three approaches: Shiki (cloud), " +
+                    "TextMate (on-device), and Compose Highlight (WebView). " +
+                    "Includes performance metrics and device footprint analysis for each.",
+            iconRes = R.drawable.code_blocks_24dp,
+            event = HomeScreen.Event.OpenComparison,
+        ),
+    )
+
 @CircuitInject(screen = HomeScreen::class, scope = AppScope::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,44 +150,6 @@ fun Home(
     state: HomeScreen.State,
     modifier: Modifier = Modifier,
 ) {
-    val approaches =
-        listOf(
-            HighlightApproach(
-                title = "Shiki Server",
-                subtitle =
-                    "Server-driven tokenization via Shiki Token Service. " +
-                        "Code is sent to the backend which returns colored tokens; " +
-                        "the app builds an AnnotatedString and renders it natively.",
-                iconRes = R.drawable.cloud_24dp,
-                event = HomeScreen.Event.OpenShikiHighlight,
-            ),
-            HighlightApproach(
-                title = "Kotlin TextMate",
-                subtitle =
-                    "On-device tokenization using TextMate grammars and VS Code themes. " +
-                        "No network required — grammars and themes are bundled in the app assets.",
-                iconRes = R.drawable.cloud_off_24dp,
-                event = HomeScreen.Event.OpenTextMateHighlight,
-            ),
-            HighlightApproach(
-                title = "Compose Highlight",
-                subtitle =
-                    "On-device highlighting via Highlight.js running in a hidden WebView. " +
-                        "190+ languages with no grammar files to maintain — just drop in the library.",
-                iconRes = R.drawable.cloud_off_24dp,
-                event = HomeScreen.Event.OpenComposeHighlight,
-            ),
-            HighlightApproach(
-                title = "Compare All Highlights",
-                subtitle =
-                    "Side-by-side comparison of all three approaches: Shiki (cloud), " +
-                        "TextMate (on-device), and Compose Highlight (WebView). " +
-                        "Includes performance metrics and device footprint analysis for each.",
-                iconRes = R.drawable.code_blocks_24dp,
-                event = HomeScreen.Event.OpenComparison,
-            ),
-        )
-
     Scaffold(
         modifier = modifier,
         topBar = {

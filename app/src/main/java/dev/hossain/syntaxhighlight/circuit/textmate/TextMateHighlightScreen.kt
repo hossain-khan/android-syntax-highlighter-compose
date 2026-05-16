@@ -182,14 +182,19 @@ class TextMateHighlightPresenter
                 }
             }
 
-            val eventSink: (TextMateHighlightScreen.Event) -> Unit = { event ->
-                when (event) {
-                    TextMateHighlightScreen.Event.NavigateBack -> navigator.pop()
-                    is TextMateHighlightScreen.Event.SampleSelected -> selectedSample = event.sample
-                    TextMateHighlightScreen.Event.ToggleTheme -> isDark = !isDark
-                    is TextMateHighlightScreen.Event.ThemePairSelected -> selectedThemePair = event.pair
+            // Remembered so its identity is stable across recompositions; prevents false
+            // inequality in the State data classes that include eventSink.
+            val eventSink: (TextMateHighlightScreen.Event) -> Unit =
+                remember {
+                    { event ->
+                        when (event) {
+                            TextMateHighlightScreen.Event.NavigateBack -> navigator.pop()
+                            is TextMateHighlightScreen.Event.SampleSelected -> selectedSample = event.sample
+                            TextMateHighlightScreen.Event.ToggleTheme -> isDark = !isDark
+                            is TextMateHighlightScreen.Event.ThemePairSelected -> selectedThemePair = event.pair
+                        }
+                    }
                 }
-            }
 
             return when {
                 errorMessage != null -> {

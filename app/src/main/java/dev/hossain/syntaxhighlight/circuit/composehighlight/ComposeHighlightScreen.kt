@@ -138,19 +138,26 @@ class ComposeHighlightPresenter
             var selectedThemePair by rememberRetained { mutableStateOf(ComposeHighlightThemePair.TOMORROW) }
             var isDark by rememberRetained { mutableStateOf(systemDark) }
 
+            // Remembered so its identity is stable across recompositions; prevents false
+            // inequality in State.Ready that includes eventSink.
+            val eventSink: (ComposeHighlightScreen.Event) -> Unit =
+                remember {
+                    { event ->
+                        when (event) {
+                            ComposeHighlightScreen.Event.NavigateBack -> navigator.pop()
+                            is ComposeHighlightScreen.Event.SampleSelected -> selectedSample = event.sample
+                            is ComposeHighlightScreen.Event.ThemePairSelected -> selectedThemePair = event.pair
+                            ComposeHighlightScreen.Event.ToggleTheme -> isDark = !isDark
+                        }
+                    }
+                }
+
             return ComposeHighlightScreen.State.Ready(
                 samples = CodeSamples.all,
                 selectedSample = selectedSample,
                 selectedThemePair = selectedThemePair,
                 isDark = isDark,
-                eventSink = { event ->
-                    when (event) {
-                        ComposeHighlightScreen.Event.NavigateBack -> navigator.pop()
-                        is ComposeHighlightScreen.Event.SampleSelected -> selectedSample = event.sample
-                        is ComposeHighlightScreen.Event.ThemePairSelected -> selectedThemePair = event.pair
-                        ComposeHighlightScreen.Event.ToggleTheme -> isDark = !isDark
-                    }
-                },
+                eventSink = eventSink,
             )
         }
 
