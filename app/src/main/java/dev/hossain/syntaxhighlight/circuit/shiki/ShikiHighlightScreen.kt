@@ -197,25 +197,19 @@ class ShikiHighlightPresenter
                     }.onFailure { errorMessage = it.message ?: "Unknown error" }
             }
 
-            val eventSink: (ShikiHighlightScreen.Event) -> Unit = { event ->
-                when (event) {
-                    ShikiHighlightScreen.Event.NavigateBack -> {
-                        navigator.pop()
-                    }
-
-                    is ShikiHighlightScreen.Event.SampleSelected -> {
-                        selectedSample = event.sample
-                    }
-
-                    is ShikiHighlightScreen.Event.ThemePairSelected -> {
-                        selectedThemePair = event.themePair
-                    }
-
-                    ShikiHighlightScreen.Event.Retry -> {
-                        retryTrigger++
+            // Remembered so its identity is stable across recompositions; prevents false
+            // inequality in the State data classes that include eventSink.
+            val eventSink: (ShikiHighlightScreen.Event) -> Unit =
+                remember {
+                    { event ->
+                        when (event) {
+                            ShikiHighlightScreen.Event.NavigateBack -> navigator.pop()
+                            is ShikiHighlightScreen.Event.SampleSelected -> selectedSample = event.sample
+                            is ShikiHighlightScreen.Event.ThemePairSelected -> selectedThemePair = event.themePair
+                            ShikiHighlightScreen.Event.Retry -> retryTrigger++
+                        }
                     }
                 }
-            }
 
             val common =
                 Triple(

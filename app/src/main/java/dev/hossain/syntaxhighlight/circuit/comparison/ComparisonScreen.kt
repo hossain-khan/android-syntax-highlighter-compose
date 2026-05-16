@@ -271,14 +271,19 @@ class ComparisonPresenter
                 }
             }
 
-            val eventSink: (ComparisonScreen.Event) -> Unit = { event ->
-                when (event) {
-                    ComparisonScreen.Event.NavigateBack -> navigator.pop()
-                    is ComparisonScreen.Event.SampleSelected -> selectedSample = event.sample
-                    ComparisonScreen.Event.RetryShiki -> shikiRetry++
-                    ComparisonScreen.Event.RetryTextMate -> textMateRetry++
+            // Remembered so its identity is stable across recompositions; prevents false
+            // inequality in ComparisonScreen.State that includes eventSink.
+            val eventSink: (ComparisonScreen.Event) -> Unit =
+                remember {
+                    { event ->
+                        when (event) {
+                            ComparisonScreen.Event.NavigateBack -> navigator.pop()
+                            is ComparisonScreen.Event.SampleSelected -> selectedSample = event.sample
+                            ComparisonScreen.Event.RetryShiki -> shikiRetry++
+                            ComparisonScreen.Event.RetryTextMate -> textMateRetry++
+                        }
+                    }
                 }
-            }
 
             return ComparisonScreen.State(
                 availableSamples = comparisonSamples,
