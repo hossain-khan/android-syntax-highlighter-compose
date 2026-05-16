@@ -17,10 +17,7 @@ All approaches produce a Compose `AnnotatedString` and share the same code sampl
 
 ## Features
 
-- ☁️ **Server-driven highlighting** via [Shiki Token Service](https://github.com/hossain-khan/shiki-token-service) — no grammar files on device
-- 📴 **On-device highlighting** via [kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) — fully offline, zero network calls
-- 🌐 **On-device highlighting** via [compose-highlight](https://github.com/hossain-khan/android-compose-highlight) — Highlight.js in a hidden WebView, 190+ languages, no grammar files to maintain
-- 🆚 **Side-by-side comparison** — compare all three approaches (Shiki, TextMate, Compose Highlight) output, performance, and device footprint together
+- 🆚 **Side-by-side comparison** — compare all three approaches (output, performance, device footprint) together
 - 🌗 **Dark & light theme support** on all screens
 - 🔤 **Multiple languages** — Kotlin, Python, JSON, JavaScript
 - 🎭 **Multiple themes** — GitHub, One Dark Pro, Dracula (Shiki); VS Dark+/Light+, One Dark Pro/Quiet Light, Monokai/Solarized Light (TextMate)
@@ -35,129 +32,21 @@ All approaches produce a Compose `AnnotatedString` and share the same code sampl
 | ---- | ---- | ---- | ---- |
 | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/cd0d4583-25be-4c74-9db0-afdc12872016" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/51968c3f-3feb-47cb-9746-0614c2cb5761" /> | <img width="1008" height="2244" alt="Screenshot_20260427_074442" src="https://github.com/user-attachments/assets/afdbb599-2846-4c2b-b50d-539cc3b78383" /> | <img width="1008" height="2244" alt="Image" src="https://github.com/user-attachments/assets/15d51596-7a58-4592-843d-350d246e8a07" /> |
 
+## Highlighting Approaches
 
+### ☁️ Shiki (Server-Driven)
 
-## How it Works
+Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/shiki-token-service) which returns per-token dark/light hex colors. The app builds a Compose `AnnotatedString` directly from the token list — no grammar files needed on device. Metrics include network round-trip time and total rendering time.
 
-### ☁️ Approach 1: Server-Driven Highlighting (Shiki)
+### 📴 TextMate (On-Device)
 
-The app calls the `/highlight/dual` endpoint, sending source code, language, and a dark+light theme pair. The service returns a 2D array of tokens, each with:
+[kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) tokenizes code using `.tmLanguage.json` grammar files and VS Code-style theme files bundled in `assets/`. Fully offline — all tokenization runs on `Dispatchers.Default` with no network calls. Metrics show CPU tokenization time.
 
-- `text` — the token's text content
-- `darkColor` — hex color for dark theme (e.g. `#F97583`)
-- `lightColor` — hex color for light theme (e.g. `#D73A49`)
+### 🌐 Highlight.js (On-Device WebView)
 
-The app builds a Compose `AnnotatedString` by applying `SpanStyle(color = …)` to each token. No grammar files are needed on the device.
+[compose-highlight](https://github.com/hossain-khan/android-compose-highlight) runs [Highlight.js](https://highlightjs.org/) inside a hidden `WebView`. Supports 190+ languages with no grammar files to maintain. A single JS round-trip produces both dark and light `AnnotatedString` outputs simultaneously. Metrics show the WebView JS round-trip time.
 
-```
-Source code
-    │
-    ▼
-POST /highlight/dual  ──► Shiki Token Service
-    │
-    ▼
-List<List<DualToken>>  (text + darkColor + lightColor per token)
-    │
-    ▼
-buildAnnotatedString { SpanStyle per token }
-    │
-    ▼
-Text(annotated, fontFamily = Monospace)
-```
-
-**Metrics shown:** ☁️ network request time · ⏱ total time (network + AnnotatedString build)
-
-#### SDK
-
-```kotlin
-// gradle/libs.versions.toml
-shiki-sdk = { group = "com.github.hossain-khan.shiki-token-service", name = "sdk-android", version = "sdk-1.0.5" }
-```
-
-Distributed via [JitPack](https://jitpack.io/#hossain-khan/shiki-token-service).
-
----
-
-### 📴 Approach 2: On-Device Highlighting (TextMate)
-
-[kotlin-textmate](https://github.com/ivan-magda/kotlin-textmate) is distributed via Maven Central. Grammar files (`.tmLanguage.json`) and theme files are shipped in `assets/`. At runtime:
-
-1. Grammar and theme files are loaded from assets on a background thread (`Dispatchers.IO`)
-2. `CodeHighlighter(grammar, theme).highlight(code)` tokenizes the source entirely on-device
-3. The resulting `AnnotatedString` is rendered in a `Text` composable
-
-No network connection is ever needed.
-
-```
-Source code
-    │
-    ▼
-GrammarReader.readGrammar(assetStream)   ← .tmLanguage.json from assets/
-ThemeReader.readTheme(assetStreams)      ← base theme (dark_vs / light_vs) + overlay theme
-    │
-    ▼
-CodeHighlighter(grammar, theme).highlight(code)   ← pure CPU, no I/O
-    │
-    ▼
-AnnotatedString (SpanStyle per token)
-    │
-    ▼
-Text(annotated, fontFamily = Monospace)
-```
-
-**Metrics shown:** ⏱ on-device tokenization time (CPU only)
-
-**Bundled assets:**
-
-| Type | Files |
-|---|---|
-| Grammars | `kotlin.tmLanguage.json`, `python.tmLanguage.json`, `JSON.tmLanguage.json`, `JavaScript.tmLanguage.json` |
-| Dark themes (base) | `dark_vs.json` |
-| Dark themes (overlays) | `dark_plus.json`, `one_dark_pro.json`, `monokai.json` |
-| Light themes (base) | `light_vs.json` |
-| Light themes (overlays) | `light_plus.json`, `quiet_light.json`, `solarized_light.json` |
-
----
-
-### 🌐 Approach 3: On-Device Highlighting (compose-highlight / Highlight.js)
-
-[compose-highlight](https://github.com/hossain-khan/android-compose-highlight) embeds [Highlight.js](https://highlightjs.org/) in a hidden `WebView`. At runtime:
-
-1. The library initializes a single `HighlightEngine` (shared across the app)
-2. Source code is passed to the engine which runs a Highlight.js tokenization call inside the WebView
-3. The tokenized HTML output is parsed and converted into a native Compose `AnnotatedString`
-4. Theme switching between light and dark is instant — both variants are produced in a single JS round-trip via `rememberHighlightedCodeBothThemes`
-
-No grammar files or theme assets need to be bundled. Highlight.js ships inside the library with support for 190+ languages.
-
-```
-Source code
-    │
-    ▼
-HighlightEngine  ──► hidden WebView (Highlight.js)
-    │
-    ▼
-Tokenized HTML  →  parse to token list (text + color)
-    │
-    ▼
-buildAnnotatedString { SpanStyle per token }
-    │
-    ▼
-Text(annotated, fontFamily = Monospace)
-```
-
-**Metrics shown:** ⏱ WebView JS round-trip time (ms)
-
-#### SDK
-
-```kotlin
-// gradle/libs.versions.toml
-compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.15.0" }
-```
-
-Distributed via [Maven Central](https://central.sonatype.com/artifact/dev.hossain/compose-highlight).
-
----
+→ [Detailed implementation notes](HOW_IT_WORKS.md)
 
 ## Tech Stack
 
@@ -171,50 +60,6 @@ Distributed via [Maven Central](https://central.sonatype.com/artifact/dev.hossai
 | On-device highlighting (Highlight.js) | [compose-highlight](https://github.com/hossain-khan/android-compose-highlight) (WebView + Highlight.js) |
 | Networking | Ktor (via Shiki SDK) |
 | Min SDK | 28 (Android 9) |
-
-## Project Structure
-
-```
-app/src/main/java/dev/hossain/syntaxhighlight/
-├── MainActivity.kt                      # Entry point; sets up Circuit navigation stack
-├── SyntaxHighlightApp.kt                # Application class; creates Metro app graph and pre-warms WebView
-├── circuit/
-│   ├── home/
-│   │   └── HomeScreen.kt                # Home screen — lists the four highlighting approaches
-│   ├── shiki/
-│   │   ├── ShikiHighlightScreen.kt      # ☁️ Shiki demo: presenter + UI composable
-│   │   └── ShikiRenderUtils.kt          # Builds AnnotatedString from Shiki dual-theme token response
-│   ├── textmate/
-│   │   └── TextMateHighlightScreen.kt   # 📴 TextMate demo: loads grammars/themes, tokenizes on-device
-│   ├── comparison/
-│   │   └── ComparisonScreen.kt          # Side-by-side comparison of all three highlighting approaches
-│   ├── composehighlight/
-│   │   └── ComposeHighlightScreen.kt    # 🌐 Compose Highlight demo: Highlight.js via WebView, 190+ languages
-│   └── overlay/
-│       └── AppInfoOverlay.kt            # Bottom-sheet overlay showing app information (example)
-├── data/
-│   ├── samples/
-│   │   └── CodeSamples.kt               # Hardcoded Kotlin/Python/JSON/JS snippets
-│   ├── shiki/
-│   │   ├── ShikiRepository.kt           # Interface
-│   │   └── ShikiRepositoryImpl.kt       # Wraps ShikiClient, calls /highlight/dual
-│   └── textmate/
-│       ├── TextMateRepository.kt        # Interface for loading grammar and theme assets
-│       ├── TextMateRepositoryImpl.kt    # Reads grammar/theme files from assets/
-│       └── TextMateAssets.kt            # TextMateSample, TextMateThemePair definitions and defaults
-├── di/
-│   ├── AppGraph.kt                      # Root Metro dependency graph (AppScope)
-│   ├── ActivityKey.kt                   # Map key annotation for Activity multibinding
-│   ├── ApplicationContext.kt            # Qualifier annotation for Application Context
-│   ├── CircuitProviders.kt              # Metro bindings for Circuit (presenter/UI factories)
-│   └── ComposeAppComponentFactory.kt    # AppComponentFactory enabling Activity constructor injection
-
-app/src/main/assets/
-├── grammars/                            # TextMate grammar files (.tmLanguage.json)
-└── themes/                              # TextMate theme files
-                                         #   dark_vs.json (base) + dark_plus.json, one_dark_pro.json, monokai.json (overlays)
-                                         #   light_vs.json (base) + light_plus.json, quiet_light.json, solarized_light.json (overlays)
-```
 
 ## Getting Started
 
@@ -232,3 +77,4 @@ app/src/main/assets/
 # Format Kotlin code
 ./gradlew formatKotlin
 ```
+
