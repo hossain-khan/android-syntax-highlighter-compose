@@ -24,6 +24,7 @@ import dev.hossain.syntaxhighlight.R
 private data class AppLink(
     val label: String,
     val url: String,
+    val iconRes: Int,
 )
 
 private val appLinks =
@@ -31,14 +32,17 @@ private val appLinks =
         AppLink(
             label = "GitHub Repository",
             url = "https://github.com/hossain-khan/android-syntax-highlighter-compose",
+            iconRes = R.drawable.github_logo,
         ),
         AppLink(
             label = "Blog: Shiki — Server-Driven Syntax Highlighting on Android",
             url = "https://hossain.dev/posts/syntax-highlighting-on-android-bringing-shiki-engine-to-compose/",
+            iconRes = R.drawable.open_in_new_24dp,
         ),
         AppLink(
             label = "Blog: Highlight.js — Native Compose Engine on Android",
             url = "https://hossain.dev/posts/syntax-highlighting-on-android-highlight-js-native-compose-engine/",
+            iconRes = R.drawable.open_in_new_24dp,
         ),
     )
 
@@ -117,7 +121,7 @@ fun AppInfoBottomSheet(modifier: Modifier = Modifier) {
                 },
                 trailingContent = {
                     Icon(
-                        painter = painterResource(R.drawable.open_in_new_24dp),
+                        painter = painterResource(link.iconRes),
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
