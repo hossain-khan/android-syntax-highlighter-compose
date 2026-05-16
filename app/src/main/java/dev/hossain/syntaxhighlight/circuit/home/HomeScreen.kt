@@ -198,7 +198,7 @@ fun Home(
                 actions = {
                     IconButton(onClick = { state.eventSink(HomeScreen.Event.ShowAppInfo) }) {
                         Icon(
-                            painter = painterResource(R.drawable.baseline_info_24),
+                            painter = painterResource(R.drawable.info_24dp),
                             contentDescription = "App info",
                         )
                     }

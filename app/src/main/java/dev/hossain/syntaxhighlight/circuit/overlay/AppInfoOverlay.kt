@@ -35,12 +35,12 @@ private val appLinks =
             iconRes = R.drawable.github_logo,
         ),
         AppLink(
-            label = "Blog: Shiki — Server-Driven Syntax Highlighting on Android",
+            label = "Blog: Shiki - Server-Driven Syntax Highlighting on Android",
             url = "https://hossain.dev/posts/syntax-highlighting-on-android-bringing-shiki-engine-to-compose/",
             iconRes = R.drawable.open_in_new_24dp,
         ),
         AppLink(
-            label = "Blog: Highlight.js — Native Compose Engine on Android",
+            label = "Blog: Highlight.js - Native Compose Engine on Android",
             url = "https://hossain.dev/posts/syntax-highlighting-on-android-highlight-js-native-compose-engine/",
             iconRes = R.drawable.open_in_new_24dp,
         ),
