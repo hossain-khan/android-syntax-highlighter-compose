@@ -58,7 +58,6 @@ import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
-import dev.hossain.shiki.model.HighlightDualResponse
 import dev.hossain.shiki.model.Theme
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.data.samples.CodeSample
@@ -68,7 +67,9 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlin.time.measureTimedValue
 
@@ -104,8 +105,11 @@ data object ShikiHighlightScreen : Screen {
             override val selectedThemePair: ThemePair,
             override val availableSamples: List<CodeSample>,
             override val availableThemePairs: List<ThemePair>,
-            val response: HighlightDualResponse,
+            /** Pre-built on [kotlinx.coroutines.Dispatchers.Default]. */
+            val annotatedDark: AnnotatedString,
+            val annotatedLight: AnnotatedString,
             val requestDurationMs: Long,
+            val annotationDurationMs: Long,
             override val eventSink: (Event) -> Unit,
         ) : State
 
@@ -173,13 +177,16 @@ class ShikiHighlightPresenter
             var selectedThemePair by rememberRetained {
                 mutableStateOf(defaultThemePairs.first { it.dark == Theme.ONE_DARK_PRO })
             }
-            var response by rememberRetained { mutableStateOf<HighlightDualResponse?>(null) }
+            var annotatedDark by rememberRetained { mutableStateOf<AnnotatedString?>(null) }
+            var annotatedLight by rememberRetained { mutableStateOf<AnnotatedString?>(null) }
             var requestDurationMs by rememberRetained { mutableStateOf(0L) }
+            var annotationDurationMs by rememberRetained { mutableStateOf(0L) }
             var errorMessage by rememberRetained { mutableStateOf<String?>(null) }
             var retryTrigger by rememberRetained { mutableStateOf(0) }
 
             LaunchedEffect(selectedSample, selectedThemePair, retryTrigger) {
-                response = null
+                annotatedDark = null
+                annotatedLight = null
                 errorMessage = null
                 // Measure end-to-end network request time: from sending the highlight request
                 // to receiving the tokenized response. This includes HTTP round-trip latency
@@ -191,9 +198,21 @@ class ShikiHighlightPresenter
                         language = selectedSample.language,
                         darkTheme = selectedThemePair.dark,
                         lightTheme = selectedThemePair.light,
-                    ).onSuccess {
+                    ).onSuccess { resp ->
                         requestDurationMs = System.currentTimeMillis() - startMs
-                        response = it
+                        // Build both AnnotatedStrings off the main thread so composition is not blocked.
+                        // State is assigned after withContext returns so that CancellationException
+                        // prevents stale writes if this LaunchedEffect is cancelled mid-flight.
+                        val (dark, light, duration) =
+                            withContext(Dispatchers.Default) {
+                                val (d, dur) =
+                                    measureTimedValue { buildAnnotatedStringFromDualResponse(resp, isDark = true) }
+                                val l = buildAnnotatedStringFromDualResponse(resp, isDark = false)
+                                Triple(d, l, dur)
+                            }
+                        annotatedDark = dark
+                        annotatedLight = light
+                        annotationDurationMs = duration.inWholeMilliseconds
                     }.onFailure { errorMessage = it.message ?: "Unknown error" }
             }
 
@@ -230,14 +249,16 @@ class ShikiHighlightPresenter
                     )
                 }
 
-                response != null -> {
+                annotatedDark != null && annotatedLight != null -> {
                     ShikiHighlightScreen.State.Success(
                         selectedSample = common.first,
                         selectedThemePair = common.second,
                         availableSamples = CodeSamples.all,
                         availableThemePairs = defaultThemePairs,
-                        response = response!!,
+                        annotatedDark = annotatedDark!!,
+                        annotatedLight = annotatedLight!!,
                         requestDurationMs = requestDurationMs,
+                        annotationDurationMs = annotationDurationMs,
                         eventSink = common.third,
                     )
                 }
@@ -400,17 +421,9 @@ fun ShikiHighlight(
 
                 is ShikiHighlightScreen.State.Success -> {
                     val isDark = isSystemInDarkTheme()
-                    // Measure local annotation-build time separately from the network request.
-                    // total = network (requestDurationMs) + client-side AnnotatedString construction.
-                    val (annotated, annotationDuration) =
-                        remember(state.response, isDark) {
-                            measureTimedValue { buildAnnotatedStringFromDualResponse(state.response, isDark) }
-                        }
-                    val totalDurationMs = state.requestDurationMs + annotationDuration.inWholeMilliseconds
-                    val bgColor =
-                        remember(isDark) {
-                            resolveShikiBackgroundColor(isDark)
-                        }
+                    val annotated = if (isDark) state.annotatedDark else state.annotatedLight
+                    val totalDurationMs = state.requestDurationMs + state.annotationDurationMs
+                    val bgColor = resolveShikiBackgroundColor(isDark)
                     Column(modifier = Modifier.fillMaxSize()) {
                         SelectionContainer(modifier = Modifier.weight(1f)) {
                             Text(

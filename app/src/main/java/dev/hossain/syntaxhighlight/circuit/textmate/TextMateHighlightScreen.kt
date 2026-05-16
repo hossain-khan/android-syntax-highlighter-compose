@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,7 +70,9 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlin.time.measureTimedValue
 
@@ -99,9 +102,12 @@ data object TextMateHighlightScreen : Screen {
         data class Ready(
             val samples: List<TextMateSample>,
             val selectedSample: TextMateSample,
-            val grammar: Grammar,
-            val darkTheme: Theme,
-            val lightTheme: Theme,
+            /** Pre-built on [kotlinx.coroutines.Dispatchers.Default]; null while tokenization is in progress. */
+            val annotatedDark: AnnotatedString?,
+            val annotatedLight: AnnotatedString?,
+            val bgColorDark: Color,
+            val bgColorLight: Color,
+            val tokenizeDurationMs: Long,
             val isDark: Boolean,
             val availableThemePairs: List<TextMateThemePair>,
             val selectedThemePair: TextMateThemePair,
@@ -158,6 +164,11 @@ class TextMateHighlightPresenter
             var selectedThemePair by rememberRetained {
                 mutableStateOf(defaultTextMateThemePairs.first { it.darkOverlayAsset.contains("one_dark_pro") })
             }
+            var annotatedDark by rememberRetained { mutableStateOf<AnnotatedString?>(null) }
+            var annotatedLight by rememberRetained { mutableStateOf<AnnotatedString?>(null) }
+            var bgColorDark by rememberRetained { mutableStateOf(Color.Unspecified) }
+            var bgColorLight by rememberRetained { mutableStateOf(Color.Unspecified) }
+            var tokenizeDurationMs by rememberRetained { mutableStateOf(0L) }
 
             // Load all grammars once on first composition.
             LaunchedEffect(Unit) {
@@ -182,6 +193,43 @@ class TextMateHighlightPresenter
                 }
             }
 
+            // Tokenize on Dispatchers.Default whenever the sample, grammars, or themes change.
+            // Both dark and light AnnotatedStrings are pre-built so that theme switching is instant
+            // in the UI without re-triggering this effect.
+            LaunchedEffect(selectedSample, grammarMap, darkTheme, lightTheme) {
+                val map = grammarMap ?: return@LaunchedEffect
+                val dark = darkTheme ?: return@LaunchedEffect
+                val light = lightTheme ?: return@LaunchedEffect
+                val grammar =
+                    map[selectedSample.label] ?: run {
+                        errorMessage = "No grammar loaded for ${selectedSample.label}"
+                        return@LaunchedEffect
+                    }
+                // Clear previous results to show a brief in-content loading state.
+                annotatedDark = null
+                annotatedLight = null
+                // Compute off the main thread; assign state after withContext returns so that
+                // CancellationException prevents stale writes if this LaunchedEffect is cancelled.
+                val computed =
+                    withContext(Dispatchers.Default) {
+                        val (darkResult, duration) =
+                            measureTimedValue { CodeHighlighter(grammar, dark).highlight(selectedSample.code) }
+                        val lightResult = CodeHighlighter(grammar, light).highlight(selectedSample.code)
+                        object {
+                            val annotatedDark = darkResult
+                            val annotatedLight = lightResult
+                            val bgColorDark = Color(dark.defaultStyle.background.toInt())
+                            val bgColorLight = Color(light.defaultStyle.background.toInt())
+                            val tokenizeDurationMs = duration.inWholeMilliseconds
+                        }
+                    }
+                annotatedDark = computed.annotatedDark
+                annotatedLight = computed.annotatedLight
+                bgColorDark = computed.bgColorDark
+                bgColorLight = computed.bgColorLight
+                tokenizeDurationMs = computed.tokenizeDurationMs
+            }
+
             // Remembered so its identity is stable across recompositions; prevents false
             // inequality in the State data classes that include eventSink.
             val eventSink: (TextMateHighlightScreen.Event) -> Unit =
@@ -202,18 +250,14 @@ class TextMateHighlightPresenter
                 }
 
                 grammarMap != null && darkTheme != null && lightTheme != null -> {
-                    val grammar =
-                        grammarMap!![selectedSample.label]
-                            ?: return TextMateHighlightScreen.State.Error(
-                                "No grammar loaded for ${selectedSample.label}",
-                                eventSink,
-                            )
                     TextMateHighlightScreen.State.Ready(
                         samples = textMateSamples,
                         selectedSample = selectedSample,
-                        grammar = grammar,
-                        darkTheme = darkTheme!!,
-                        lightTheme = lightTheme!!,
+                        annotatedDark = annotatedDark,
+                        annotatedLight = annotatedLight,
+                        bgColorDark = bgColorDark,
+                        bgColorLight = bgColorLight,
+                        tokenizeDurationMs = tokenizeDurationMs,
                         isDark = isDark,
                         availableThemePairs = defaultTextMateThemePairs,
                         selectedThemePair = selectedThemePair,
@@ -346,17 +390,8 @@ private fun ReadyContent(
     state: TextMateHighlightScreen.State.Ready,
     innerPadding: androidx.compose.foundation.layout.PaddingValues,
 ) {
-    val theme = if (state.isDark) state.darkTheme else state.lightTheme
-    // Measure on-device tokenization time: how long CodeHighlighter takes to walk the
-    // grammar rules and produce the AnnotatedString. This is pure CPU work with no I/O,
-    // so it reflects the cost of local TextMate tokenization only.
-    // Wrapped in `remember` so re-tokenization only happens when code, grammar, or theme changes.
-    val (annotated, duration) =
-        remember(state.selectedSample.code, state.grammar, theme) {
-            measureTimedValue { CodeHighlighter(state.grammar, theme).highlight(state.selectedSample.code) }
-        }
-    val durationMs = duration.inWholeMilliseconds
-    val bgColor = remember(theme) { Color(theme.defaultStyle.background.toInt()) }
+    val annotated = if (state.isDark) state.annotatedDark else state.annotatedLight
+    val bgColor = if (state.isDark) state.bgColorDark else state.bgColorLight
 
     Column(
         modifier =
@@ -387,30 +422,39 @@ private fun ReadyContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        SelectionContainer(modifier = Modifier.weight(1f)) {
-            Text(
-                text = annotated,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 13.sp,
-                    ),
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(bgColor, shape = MaterialTheme.shapes.small)
-                        .horizontalScroll(rememberScrollState())
-                        .verticalScroll(rememberScrollState())
-                        .padding(12.dp),
+        if (annotated == null) {
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            SelectionContainer(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = annotated,
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 13.sp,
+                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(bgColor, shape = MaterialTheme.shapes.small)
+                            .horizontalScroll(rememberScrollState())
+                            .verticalScroll(rememberScrollState())
+                            .padding(12.dp),
+                )
+            }
+
+            HorizontalDivider()
+            TextMateMetricsRow(
+                durationMs = state.tokenizeDurationMs,
+                code = state.selectedSample.code,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
-
-        HorizontalDivider()
-        TextMateMetricsRow(
-            durationMs = durationMs,
-            code = state.selectedSample.code,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-        )
     }
 }
 

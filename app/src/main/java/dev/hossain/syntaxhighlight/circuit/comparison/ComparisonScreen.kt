@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,7 +62,6 @@ import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
 import dev.hossain.highlight.ui.rememberTomorrowNightTheme
 import dev.hossain.highlight.ui.rememberTomorrowTheme
-import dev.hossain.shiki.model.HighlightDualResponse
 import dev.hossain.shiki.model.Theme
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.circuit.shiki.buildAnnotatedStringFromDualResponse
@@ -73,7 +73,6 @@ import dev.hossain.syntaxhighlight.data.textmate.TextMateRepository
 import dev.hossain.syntaxhighlight.data.textmate.defaultTextMateThemePairs
 import dev.hossain.syntaxhighlight.data.textmate.textMateSamples
 import dev.textmate.compose.CodeHighlighter
-import dev.textmate.grammar.Grammar
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -129,14 +128,19 @@ data object ComparisonScreen : Screen {
 
     /**
      * Per-highlight state for the cloud (Shiki) side.
-     * [Success] stores the raw API response so the UI can derive the [AnnotatedString]
-     * with `remember(response, isDark)` — avoiding stale colors on theme changes.
+     * [Success] stores pre-built [AnnotatedString]s for both dark and light themes so the UI can
+     * switch instantly without any computation during composition.
      */
     sealed interface ShikiState {
         data object Loading : ShikiState
 
         data class Success(
-            val response: HighlightDualResponse,
+            val annotatedDark: AnnotatedString,
+            val annotatedLight: AnnotatedString,
+            val bgColorDark: Color,
+            val bgColorLight: Color,
+            /** Time to build both [AnnotatedString]s from the token response. */
+            val renderMs: Long,
             /** Time for the network request to the Shiki token service. */
             val networkMs: Long,
         ) : ShikiState
@@ -148,16 +152,18 @@ data object ComparisonScreen : Screen {
 
     /**
      * Per-highlight state for the on-device (TextMate) side.
-     * Stores loaded [Grammar] and both [darkTheme]/[lightTheme] so the UI can pick the
-     * correct one with `remember(grammar, theme)` — avoiding stale colors on theme changes.
+     * [Success] stores pre-built [AnnotatedString]s for both dark and light themes so the UI can
+     * switch instantly without any computation during composition.
      */
     sealed interface TextMateState {
         data object Loading : TextMateState
 
         data class Success(
-            val grammar: Grammar,
-            val darkTheme: dev.textmate.theme.Theme,
-            val lightTheme: dev.textmate.theme.Theme,
+            val annotatedDark: AnnotatedString,
+            val annotatedLight: AnnotatedString,
+            val bgColorDark: Color,
+            val bgColorLight: Color,
+            val tokenizeMs: Long,
         ) : TextMateState
 
         data class Error(
@@ -204,7 +210,7 @@ class ComparisonPresenter
             val isDark = isSystemInDarkTheme()
             var selectedSample by rememberRetained { mutableStateOf(comparisonSamples.first()) }
             var shikiState by rememberRetained { mutableStateOf<ComparisonScreen.ShikiState>(ComparisonScreen.ShikiState.Loading) }
-            var grammarMap by rememberRetained { mutableStateOf<Map<String, Grammar>?>(null) }
+            var grammarMap by rememberRetained { mutableStateOf<Map<String, dev.textmate.grammar.Grammar>?>(null) }
             var textMateThemes by rememberRetained { mutableStateOf<Pair<dev.textmate.theme.Theme, dev.textmate.theme.Theme>?>(null) }
             var textMateState by rememberRetained { mutableStateOf<ComparisonScreen.TextMateState>(ComparisonScreen.TextMateState.Loading) }
             var shikiRetry by rememberRetained { mutableIntStateOf(0) }
@@ -222,53 +228,92 @@ class ComparisonPresenter
             }
 
             // Tokenize with TextMate whenever the sample or grammars/themes change.
+            // Both dark and light AnnotatedStrings are built on Dispatchers.Default so the
+            // composition thread is never blocked. State is assigned after withContext returns
+            // so that CancellationException prevents stale writes if this effect is cancelled.
             LaunchedEffect(selectedSample, grammarMap, textMateThemes) {
                 val map = grammarMap ?: return@LaunchedEffect
                 val themes = textMateThemes ?: return@LaunchedEffect
                 textMateState = ComparisonScreen.TextMateState.Loading
-                withContext(Dispatchers.Default) {
-                    try {
-                        val grammar =
-                            map[selectedSample.label]
-                                ?: throw IllegalStateException("No grammar for ${selectedSample.label}")
-                        textMateState =
+                val newState =
+                    withContext(Dispatchers.Default) {
+                        try {
+                            val grammar =
+                                map[selectedSample.label]
+                                    ?: throw IllegalStateException("No grammar for ${selectedSample.label}")
+                            val (darkResult, duration) =
+                                measureTimedValue { CodeHighlighter(grammar, themes.first).highlight(selectedSample.code) }
+                            val lightResult = CodeHighlighter(grammar, themes.second).highlight(selectedSample.code)
                             ComparisonScreen.TextMateState.Success(
-                                grammar = grammar,
-                                darkTheme = themes.first,
-                                lightTheme = themes.second,
+                                annotatedDark = darkResult,
+                                annotatedLight = lightResult,
+                                bgColorDark =
+                                    Color(
+                                        themes.first.defaultStyle.background
+                                            .toInt(),
+                                    ),
+                                bgColorLight =
+                                    Color(
+                                        themes.second.defaultStyle.background
+                                            .toInt(),
+                                    ),
+                                tokenizeMs = duration.inWholeMilliseconds,
                             )
-                    } catch (e: Exception) {
-                        textMateState = ComparisonScreen.TextMateState.Error(e.message ?: "Tokenization failed")
+                        } catch (e: Exception) {
+                            ComparisonScreen.TextMateState.Error(e.message ?: "Tokenization failed")
+                        }
                     }
-                }
+                textMateState = newState
             }
 
             // Call the Shiki API whenever the sample changes or a retry is triggered.
+            // Network I/O runs on Dispatchers.IO; CPU-bound AnnotatedString building switches
+            // to Dispatchers.Default. Both dark and light builds are timed together for accurate
+            // renderMs. State is assigned after withContext returns so that CancellationException
+            // prevents stale writes if this LaunchedEffect is cancelled.
             LaunchedEffect(selectedSample, shikiRetry) {
                 shikiState = ComparisonScreen.ShikiState.Loading
-                withContext(Dispatchers.IO) {
-                    val (result, elapsed) =
-                        measureTimedValue {
-                            shikiRepository.highlightDual(
-                                code = selectedSample.code,
-                                language = selectedSample.language,
-                                darkTheme = Theme.ONE_DARK_PRO,
-                                lightTheme = Theme.MIN_LIGHT,
-                            )
-                        }
-                    shikiState =
+                val newState =
+                    withContext(Dispatchers.IO) {
+                        val (result, networkMs) =
+                            measureTimedValue {
+                                shikiRepository.highlightDual(
+                                    code = selectedSample.code,
+                                    language = selectedSample.language,
+                                    darkTheme = Theme.ONE_DARK_PRO,
+                                    lightTheme = Theme.MIN_LIGHT,
+                                )
+                            }
                         result.fold(
                             onSuccess = { response ->
+                                // Switch to Default for CPU-bound AnnotatedString building;
+                                // measure both dark and light together for accurate renderMs.
+                                val (darkResult, lightResult, renderDuration) =
+                                    withContext(Dispatchers.Default) {
+                                        val (pair, dur) =
+                                            measureTimedValue {
+                                                Pair(
+                                                    buildAnnotatedStringFromDualResponse(response, isDark = true),
+                                                    buildAnnotatedStringFromDualResponse(response, isDark = false),
+                                                )
+                                            }
+                                        Triple(pair.first, pair.second, dur)
+                                    }
                                 ComparisonScreen.ShikiState.Success(
-                                    response = response,
-                                    networkMs = elapsed.inWholeMilliseconds,
+                                    annotatedDark = darkResult,
+                                    annotatedLight = lightResult,
+                                    bgColorDark = resolveShikiBackgroundColor(isDark = true),
+                                    bgColorLight = resolveShikiBackgroundColor(isDark = false),
+                                    renderMs = renderDuration.inWholeMilliseconds,
+                                    networkMs = networkMs.inWholeMilliseconds,
                                 )
                             },
                             onFailure = { e ->
                                 ComparisonScreen.ShikiState.Error(e.message ?: "Network request failed")
                             },
                         )
-                }
+                    }
+                shikiState = newState
             }
 
             // Remembered so its identity is stable across recompositions; prevents false
@@ -433,22 +478,15 @@ private fun ShikiApproachCard(
                 }
 
                 is ComparisonScreen.ShikiState.Success -> {
-                    // Build AnnotatedString in the UI layer so theme changes auto-recompute.
-                    val (annotated, renderDuration) =
-                        remember(shikiState.response, isDark) {
-                            measureTimedValue {
-                                buildAnnotatedStringFromDualResponse(shikiState.response, isDark)
-                            }
-                        }
-                    val renderMs = renderDuration.inWholeMilliseconds
-                    val bgColor = remember(isDark) { resolveShikiBackgroundColor(isDark) }
+                    val annotated = if (isDark) shikiState.annotatedDark else shikiState.annotatedLight
+                    val bgColor = if (isDark) shikiState.bgColorDark else shikiState.bgColorLight
 
                     CodePreview(annotated = annotated, bgColor = bgColor)
                     Spacer(modifier = Modifier.height(10.dp))
                     ShikiInfoCard(
                         sample = sample,
                         networkMs = shikiState.networkMs,
-                        renderMs = renderMs,
+                        renderMs = shikiState.renderMs,
                     )
                 }
             }
@@ -480,23 +518,14 @@ private fun TextMateApproachCard(
                 }
 
                 is ComparisonScreen.TextMateState.Success -> {
-                    val theme = if (isDark) textMateState.darkTheme else textMateState.lightTheme
-                    // Tokenization measured here with remember so it re-runs only when inputs change,
-                    // not on every recomposition.
-                    val (annotated, tokenizeDuration) =
-                        remember(sample.code, textMateState.grammar, theme) {
-                            measureTimedValue {
-                                CodeHighlighter(textMateState.grammar, theme).highlight(sample.code)
-                            }
-                        }
-                    val tokenizeMs = tokenizeDuration.inWholeMilliseconds
-                    val bgColor = remember(theme) { Color(theme.defaultStyle.background.toInt()) }
+                    val annotated = if (isDark) textMateState.annotatedDark else textMateState.annotatedLight
+                    val bgColor = if (isDark) textMateState.bgColorDark else textMateState.bgColorLight
 
                     CodePreview(annotated = annotated, bgColor = bgColor)
                     Spacer(modifier = Modifier.height(10.dp))
                     TextMateInfoCard(
                         sample = sample,
-                        tokenizeMs = tokenizeMs,
+                        tokenizeMs = textMateState.tokenizeMs,
                     )
                 }
             }
