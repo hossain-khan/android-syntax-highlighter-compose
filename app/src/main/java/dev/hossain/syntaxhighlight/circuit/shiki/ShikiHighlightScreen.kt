@@ -201,14 +201,18 @@ class ShikiHighlightPresenter
                     ).onSuccess { resp ->
                         requestDurationMs = System.currentTimeMillis() - startMs
                         // Build both AnnotatedStrings off the main thread so composition is not blocked.
-                        withContext(Dispatchers.Default) {
-                            val (dark, duration) =
-                                measureTimedValue { buildAnnotatedStringFromDualResponse(resp, isDark = true) }
-                            val light = buildAnnotatedStringFromDualResponse(resp, isDark = false)
-                            annotatedDark = dark
-                            annotatedLight = light
-                            annotationDurationMs = duration.inWholeMilliseconds
-                        }
+                        // State is assigned after withContext returns so that CancellationException
+                        // prevents stale writes if this LaunchedEffect is cancelled mid-flight.
+                        val (dark, light, duration) =
+                            withContext(Dispatchers.Default) {
+                                val (d, dur) =
+                                    measureTimedValue { buildAnnotatedStringFromDualResponse(resp, isDark = true) }
+                                val l = buildAnnotatedStringFromDualResponse(resp, isDark = false)
+                                Triple(d, l, dur)
+                            }
+                        annotatedDark = dark
+                        annotatedLight = light
+                        annotationDurationMs = duration.inWholeMilliseconds
                     }.onFailure { errorMessage = it.message ?: "Unknown error" }
             }
 

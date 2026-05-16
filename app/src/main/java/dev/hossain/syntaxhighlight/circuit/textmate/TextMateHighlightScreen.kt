@@ -208,16 +208,26 @@ class TextMateHighlightPresenter
                 // Clear previous results to show a brief in-content loading state.
                 annotatedDark = null
                 annotatedLight = null
-                withContext(Dispatchers.Default) {
-                    val (darkResult, duration) =
-                        measureTimedValue { CodeHighlighter(grammar, dark).highlight(selectedSample.code) }
-                    val lightResult = CodeHighlighter(grammar, light).highlight(selectedSample.code)
-                    annotatedDark = darkResult
-                    annotatedLight = lightResult
-                    bgColorDark = Color(dark.defaultStyle.background.toInt())
-                    bgColorLight = Color(light.defaultStyle.background.toInt())
-                    tokenizeDurationMs = duration.inWholeMilliseconds
-                }
+                // Compute off the main thread; assign state after withContext returns so that
+                // CancellationException prevents stale writes if this LaunchedEffect is cancelled.
+                val computed =
+                    withContext(Dispatchers.Default) {
+                        val (darkResult, duration) =
+                            measureTimedValue { CodeHighlighter(grammar, dark).highlight(selectedSample.code) }
+                        val lightResult = CodeHighlighter(grammar, light).highlight(selectedSample.code)
+                        object {
+                            val annotatedDark = darkResult
+                            val annotatedLight = lightResult
+                            val bgColorDark = Color(dark.defaultStyle.background.toInt())
+                            val bgColorLight = Color(light.defaultStyle.background.toInt())
+                            val tokenizeDurationMs = duration.inWholeMilliseconds
+                        }
+                    }
+                annotatedDark = computed.annotatedDark
+                annotatedLight = computed.annotatedLight
+                bgColorDark = computed.bgColorDark
+                bgColorLight = computed.bgColorLight
+                tokenizeDurationMs = computed.tokenizeDurationMs
             }
 
             // Remembered so its identity is stable across recompositions; prevents false
