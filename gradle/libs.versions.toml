@@ -41,6 +41,15 @@ lifecycleRuntimeKtx = "2.10.0"
 metro = "1.0.0"
 androidxWebkit = "1.16.0"
 
+# https://github.com/hossain-khan/android-compose-highlight
+composeHighlight = "0.16.0"
+
+# https://github.com/ivan-magda/kotlin-textmate
+kotlinTextmate = "0.1.0"
+
+# https://github.com/hossain-khan/shiki-token-service/blob/main/sdk/README.md
+shikiSdk = "sdk-1.0.5"
+
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -92,15 +101,15 @@ androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "a
 
 # Shiki Token Service SDK - server-driven syntax highlighting
 # https://github.com/hossain-khan/shiki-token-service/blob/main/sdk/README.md
-shiki-sdk = { group = "com.github.hossain-khan.shiki-token-service", name = "sdk-android", version = "sdk-1.0.5" }
+shiki-sdk = { group = "com.github.hossain-khan.shiki-token-service", name = "sdk-android", version.ref = "shikiSdk" }
 
 # compose-highlight - on-device syntax highlighting via Highlight.js WebView
 # https://github.com/hossain-khan/android-compose-highlight
-compose-highlight = { group = "dev.hossain", name = "compose-highlight", version = "0.15.0" }
+compose-highlight = { group = "dev.hossain", name = "compose-highlight", version.ref = "composeHighlight" }
 
 # kotlin-textmate - on-device TextMate grammar-based syntax highlighting
 # https://github.com/ivan-magda/kotlin-textmate
-kotlin-textmate-compose = { group = "io.github.ivan-magda", name = "kotlin-textmate-compose", version = "0.1.0" }
+kotlin-textmate-compose = { group = "io.github.ivan-magda", name = "kotlin-textmate-compose", version.ref = "kotlinTextmate" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
