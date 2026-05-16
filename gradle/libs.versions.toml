@@ -9,6 +9,7 @@ activityCompose = "1.13.0"
 # https://developer.android.com/build/releases/gradle-plugin
 # AGP 9.1 requires Gradle 9.3.1 or higher
 agp = "9.2.1"
+
 circuit = "0.33.1"
 composeBom = "2026.05.00"
 coreKtx = "1.18.0"
@@ -22,16 +23,6 @@ kotlin = "2.3.21"
 # The KSP (Kotlin Symbol Processing) plugin version is managed separately in this template.
 # When upgrading Kotlin or KSP, verify that the selected KSP release is compatible with the configured Kotlin version.
 ksp = "2.3.7"
-
-# Networking
-# https://square.github.io/okhttp/
-okhttp = "5.3.2"
-# https://square.github.io/retrofit/
-retrofit = "3.0.0"
-# https://github.com/Kotlin/kotlinx.serialization
-kotlinxSerializationJson = "1.11.0"
-# https://github.com/JakeWharton/retrofit2-kotlinx-serialization-converter
-retrofitKotlinxSerializationConverter = "1.0.0"
 
 # Kotlin linter with built-in formatter
 # https://github.com/jeremymailen/kotlinter-gradle
@@ -80,17 +71,6 @@ circuitx-overlays = { group = "com.slack.circuit", name = "circuitx-overlays", v
 
 javax-inject = { group = "javax.inject", name = "javax.inject", version = "1" }
 
-# Networking
-# https://square.github.io/okhttp/
-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
-okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
-# https://square.github.io/retrofit/
-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-# https://github.com/Kotlin/kotlinx.serialization
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
-# https://github.com/JakeWharton/retrofit2-kotlinx-serialization-converter
-retrofit-kotlinx-serialization-converter = { group = "com.jakewharton.retrofit", name = "retrofit2-kotlinx-serialization-converter", version.ref = "retrofitKotlinxSerializationConverter" }
-
 # # https://developer.android.com/develop/ui/compose/text/fonts
 # https://mvnrepository.com/artifact/androidx.compose.ui/ui-text-google-fonts
 androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "googleFonts" }
@@ -130,8 +110,5 @@ metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
 # https://github.com/jeremymailen/kotlinter-gradle
 # https://github.com/pinterest/ktlint
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
-
-# https://kotlinlang.org/docs/serialization.html
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 
