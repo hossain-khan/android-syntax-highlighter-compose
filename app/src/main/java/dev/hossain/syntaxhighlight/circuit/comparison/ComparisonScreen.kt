@@ -59,6 +59,7 @@ import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
+import dev.hossain.highlight.engine.HighlightTimings
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
 import dev.hossain.highlight.ui.rememberTomorrowNightTheme
 import dev.hossain.highlight.ui.rememberTomorrowTheme
@@ -80,6 +81,7 @@ import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
+import kotlin.time.Duration
 import kotlin.time.measureTimedValue
 
 /**
@@ -547,8 +549,8 @@ private fun CodeSample.toHighlightJsLanguage(): String =
         else -> label.lowercase()
     }
 
-/** Approximate size of the compose-highlight library (WebView-based, no grammar assets). */
-private const val COMPOSE_HIGHLIGHT_LIBRARY_BYTES = 50_000L
+/** Approximate total app size impact of the compose-highlight library (~308 KB assets + ~235 KB dex). */
+private const val COMPOSE_HIGHLIGHT_LIBRARY_BYTES = 440_000L
 
 @Composable
 private fun ComposeHighlightApproachCard(
@@ -577,7 +579,7 @@ private fun ComposeHighlightApproachCard(
             } else {
                 CodePreview(annotated = annotatedCode, bgColor = bgColor)
                 Spacer(modifier = Modifier.height(10.dp))
-                ComposeHighlightInfoCard(highlightMs = themedResult?.durationMs ?: 0L)
+                ComposeHighlightInfoCard(timings = themedResult?.timings)
             }
         }
     }
@@ -679,23 +681,38 @@ private fun TextMateInfoCard(
 
 @Composable
 private fun ComposeHighlightInfoCard(
-    highlightMs: Long,
+    timings: HighlightTimings?,
     modifier: Modifier = Modifier,
 ) {
     val libKb = COMPOSE_HIGHLIGHT_LIBRARY_BYTES / 1000L
     InfoCard(modifier = modifier) {
         InfoSection(title = "Performance") {
-            InfoRow(label = "⏱  WebView JS round-trip", value = "${highlightMs}ms", emphasized = true)
+            if (timings != null) {
+                InfoRow(label = "🌐  JS bridge", value = timings.jsBridge.toDisplayString())
+                InfoRow(label = "📝  JSON unescape", value = timings.jsonUnescape.toDisplayString())
+                InfoRow(label = "🔍  HTML parse", value = timings.htmlParse.toDisplayString())
+                InfoRow(label = "🌳  Tree walk", value = timings.treeWalk.toDisplayString())
+                if (timings.themeParse > Duration.ZERO) {
+                    InfoRow(label = "🎨  Theme parse", value = timings.themeParse.toDisplayString())
+                } else {
+                    InfoRow(label = "🎨  Theme parse", value = "cached")
+                }
+                InfoRow(label = "⏱  Total", value = timings.total.toDisplayString(), emphasized = true)
+            } else {
+                InfoRow(label = "⏱  Total", value = "…", emphasized = true)
+            }
             InfoSubtitle("Single shared WebView — one initialization cost shared across all blocks.")
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         InfoSection(title = "Device Footprint (approx.)") {
             InfoRow(label = "📄  Grammar files", value = "0 KB")
-            InfoRow(label = "🎨  Theme files", value = "0 KB")
+            InfoRow(label = "🎨  Theme files", value = "~1 KB (per built-in theme)")
             InfoRow(label = "📚  Library (incl. Highlight.js)", value = "~$libKb KB")
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            InfoRow(label = "📦  Total", value = "~$libKb KB", emphasized = true)
-            InfoSubtitle("190+ languages and themes are bundled inside the library — no assets to manage.")
+            InfoRow(label = "📦  Total", value = "~$libKb KB + themes", emphasized = true)
+            InfoSubtitle(
+                "190+ languages bundled in JS. Each built-in theme adds ~1 KB; custom themes from assets or CSS are user-supplied.",
+            )
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         InfoSection(title = "Capabilities") {
@@ -705,6 +722,8 @@ private fun ComposeHighlightInfoCard(
         }
     }
 }
+
+private fun Duration.toDisplayString(): String = if (inWholeMilliseconds < 1) "${inWholeMicroseconds}µs" else "${inWholeMilliseconds}ms"
 
 @Composable
 private fun InfoCard(

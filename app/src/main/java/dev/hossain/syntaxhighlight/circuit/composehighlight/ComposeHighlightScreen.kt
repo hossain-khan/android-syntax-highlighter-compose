@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -57,6 +58,7 @@ import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
+import dev.hossain.highlight.engine.HighlightTimings
 import dev.hossain.highlight.ui.rememberAtomOneDarkTheme
 import dev.hossain.highlight.ui.rememberAtomOneLightTheme
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
@@ -71,6 +73,7 @@ import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import kotlin.time.Duration
 
 /** Named light/dark [HighlightTheme] pairs available on this screen. */
 enum class ComposeHighlightThemePair(
@@ -332,7 +335,7 @@ private fun ReadyContent(
 
         HorizontalDivider()
         ComposeHighlightMetricsRow(
-            highlightMs = themedResult?.durationMs,
+            timings = themedResult?.timings,
             code = state.selectedSample.code,
             modifier =
                 Modifier
@@ -436,30 +439,67 @@ private fun ThemePairDropdown(
 
 @Composable
 private fun ComposeHighlightMetricsRow(
-    highlightMs: Long?,
+    timings: HighlightTimings?,
     code: String,
     modifier: Modifier = Modifier,
 ) {
     val lines = code.lines().size
     val chars = code.length
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = if (highlightMs != null) "⏱ ${highlightMs}ms" else "⏱ …",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = "↕ $lines lines",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = "∑ $chars chars",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    Column(modifier = modifier) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = if (timings != null) "⏱ ${timings.total.inWholeMilliseconds}ms total" else "⏱ …",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "↕ $lines lines",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "∑ $chars chars",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (timings != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TimingLabel("JS", timings.jsBridge)
+                TimingLabel("unescape", timings.jsonUnescape)
+                TimingLabel("HTML", timings.htmlParse)
+                TimingLabel("walk", timings.treeWalk)
+                if (timings.themeParse > Duration.ZERO) {
+                    TimingLabel("theme", timings.themeParse)
+                } else {
+                    Text(
+                        text = "theme: cached",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.wrapContentWidth(),
+                    )
+                }
+            }
+        }
     }
 }
+
+@Composable
+private fun TimingLabel(
+    label: String,
+    duration: Duration,
+) {
+    Text(
+        text = "$label: ${duration.toDisplayString()}",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.wrapContentWidth(),
+    )
+}
+
+private fun Duration.toDisplayString(): String = if (inWholeMilliseconds < 1) "${inWholeMicroseconds}µs" else "${inWholeMilliseconds}ms"
