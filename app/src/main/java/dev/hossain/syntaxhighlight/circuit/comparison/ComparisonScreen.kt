@@ -549,8 +549,8 @@ private fun CodeSample.toHighlightJsLanguage(): String =
         else -> label.lowercase()
     }
 
-/** Approximate size of the compose-highlight library (WebView-based, no grammar assets). */
-private const val COMPOSE_HIGHLIGHT_LIBRARY_BYTES = 50_000L
+/** Approximate total app size impact of the compose-highlight library (~308 KB assets + ~235 KB dex). */
+private const val COMPOSE_HIGHLIGHT_LIBRARY_BYTES = 440_000L
 
 @Composable
 private fun ComposeHighlightApproachCard(
@@ -706,11 +706,13 @@ private fun ComposeHighlightInfoCard(
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         InfoSection(title = "Device Footprint (approx.)") {
             InfoRow(label = "📄  Grammar files", value = "0 KB")
-            InfoRow(label = "🎨  Theme files", value = "0 KB")
+            InfoRow(label = "🎨  Theme files", value = "~1 KB (per built-in theme)")
             InfoRow(label = "📚  Library (incl. Highlight.js)", value = "~$libKb KB")
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            InfoRow(label = "📦  Total", value = "~$libKb KB", emphasized = true)
-            InfoSubtitle("190+ languages and themes are bundled inside the library — no assets to manage.")
+            InfoRow(label = "📦  Total", value = "~$libKb KB + themes", emphasized = true)
+            InfoSubtitle(
+                "190+ languages bundled in JS. Each built-in theme adds ~1 KB; custom themes from assets or CSS are user-supplied.",
+            )
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         InfoSection(title = "Capabilities") {
