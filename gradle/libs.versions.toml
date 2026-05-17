@@ -33,7 +33,7 @@ metro = "1.0.0"
 androidxWebkit = "1.16.0"
 
 # https://github.com/hossain-khan/android-compose-highlight
-composeHighlight = "0.16.0"
+composeHighlight = "0.17.2"
 
 # https://github.com/ivan-magda/kotlin-textmate
 kotlinTextmate = "0.1.0"
