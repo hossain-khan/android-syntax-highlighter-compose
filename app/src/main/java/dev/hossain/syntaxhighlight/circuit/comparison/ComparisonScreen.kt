@@ -59,6 +59,7 @@ import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
+import dev.hossain.highlight.engine.HighlightTimings
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
 import dev.hossain.highlight.ui.rememberTomorrowNightTheme
 import dev.hossain.highlight.ui.rememberTomorrowTheme
@@ -80,6 +81,7 @@ import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
+import kotlin.time.Duration
 import kotlin.time.measureTimedValue
 
 /**
@@ -577,7 +579,7 @@ private fun ComposeHighlightApproachCard(
             } else {
                 CodePreview(annotated = annotatedCode, bgColor = bgColor)
                 Spacer(modifier = Modifier.height(10.dp))
-                ComposeHighlightInfoCard(highlightMs = themedResult?.durationMs ?: 0L)
+                ComposeHighlightInfoCard(timings = themedResult?.timings)
             }
         }
     }
@@ -679,13 +681,26 @@ private fun TextMateInfoCard(
 
 @Composable
 private fun ComposeHighlightInfoCard(
-    highlightMs: Long,
+    timings: HighlightTimings?,
     modifier: Modifier = Modifier,
 ) {
     val libKb = COMPOSE_HIGHLIGHT_LIBRARY_BYTES / 1000L
     InfoCard(modifier = modifier) {
         InfoSection(title = "Performance") {
-            InfoRow(label = "⏱  WebView JS round-trip", value = "${highlightMs}ms", emphasized = true)
+            if (timings != null) {
+                InfoRow(label = "🌐  JS bridge", value = timings.jsBridge.toDisplayString())
+                InfoRow(label = "📝  JSON unescape", value = timings.jsonUnescape.toDisplayString())
+                InfoRow(label = "🔍  HTML parse", value = timings.htmlParse.toDisplayString())
+                InfoRow(label = "🌳  Tree walk", value = timings.treeWalk.toDisplayString())
+                if (timings.themeParse > Duration.ZERO) {
+                    InfoRow(label = "🎨  Theme parse", value = timings.themeParse.toDisplayString())
+                } else {
+                    InfoRow(label = "🎨  Theme parse", value = "cached")
+                }
+                InfoRow(label = "⏱  Total", value = timings.total.toDisplayString(), emphasized = true)
+            } else {
+                InfoRow(label = "⏱  Total", value = "…", emphasized = true)
+            }
             InfoSubtitle("Single shared WebView — one initialization cost shared across all blocks.")
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -705,6 +720,8 @@ private fun ComposeHighlightInfoCard(
         }
     }
 }
+
+private fun Duration.toDisplayString(): String = if (inWholeMilliseconds < 1) "${inWholeMicroseconds}µs" else "${inWholeMilliseconds}ms"
 
 @Composable
 private fun InfoCard(
