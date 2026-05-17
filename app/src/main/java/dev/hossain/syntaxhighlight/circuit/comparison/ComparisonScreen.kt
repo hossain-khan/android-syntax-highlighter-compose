@@ -392,6 +392,8 @@ fun Comparison(
                 onSelect = { state.eventSink(ComparisonScreen.Event.SampleSelected(it)) },
             )
 
+            ColdStartInfoBanner()
+
             ApproachSectionHeader(
                 icon = R.drawable.cloud_24dp,
                 label = "Cloud — Shiki Token Service",
@@ -427,6 +429,37 @@ fun Comparison(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun ColdStartInfoBanner(modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            ),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.info_24dp),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            Text(
+                text =
+                    "First load timings may be high due to cold start (WebView warm-up, theme parse, " +
+                        "cloud service spin-up). Switch languages a few times to see warmed-up timings.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
         }
     }
 }
