@@ -455,8 +455,8 @@ private fun ColdStartInfoBanner(modifier: Modifier = Modifier) {
             )
             Text(
                 text =
-                    "First load timings may be high due to cold start (WebView warm-up, theme parse). " +
-                        "Switch languages a few times to see warmed-up timings.",
+                    "First load timings may be high due to cold start (WebView warm-up, theme parse, " +
+                        "cloud service spin-up). Switch languages a few times to see warmed-up timings.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
