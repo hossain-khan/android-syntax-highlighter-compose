@@ -83,6 +83,30 @@ import kotlin.time.measureTimedValue
  * Grammar files (`.tmLanguage.json`) and theme files are loaded from the app's `assets/`
  * directory on a background thread. Once loaded, [dev.textmate.compose.CodeHighlighter]
  * tokenizes the selected code snippet entirely on-device — no network connection is required.
+ *
+ * ## Available kotlin-textmate Compose APIs
+ *
+ * The library ships three levels of API for rendering highlighted code:
+ *
+ * - **[dev.textmate.compose.CodeBlock]** — highest-level drop-in composable. Handles
+ *   background color, horizontal scroll, padding, and [androidx.compose.foundation.text.selection.SelectionContainer]
+ *   automatically. Best for static, single-theme displays.
+ * - **[dev.textmate.compose.rememberHighlightedCode]** — `@Composable` wrapper around
+ *   [dev.textmate.compose.CodeHighlighter] that uses `remember(code, grammar, theme)` to cache
+ *   the [androidx.compose.ui.text.AnnotatedString]. Useful when you need full control over
+ *   the `Text` call but still want the caching handled for you.
+ * - **[dev.textmate.compose.CodeHighlighter]** — lowest-level API. Tokenizes synchronously
+ *   and returns an [androidx.compose.ui.text.AnnotatedString]. Use when you need to call
+ *   highlighting outside of composition (e.g., in a `LaunchedEffect` on a background
+ *   dispatcher) or when you need to produce multiple `AnnotatedString`s in one pass.
+ *
+ * This screen uses [dev.textmate.compose.CodeHighlighter] directly because:
+ * 1. It pre-builds **both** dark and light [androidx.compose.ui.text.AnnotatedString]s in a
+ *    single `LaunchedEffect` on [kotlinx.coroutines.Dispatchers.Default], so theme toggling
+ *    is instantaneous with no re-tokenization.
+ * 2. [dev.textmate.compose.rememberHighlightedCode] is `@Composable` and therefore cannot be
+ *    called from a presenter; it also re-tokenizes on every theme change.
+ * 3. The tokenization duration is captured via `measureTimedValue` for the metrics row.
  */
 @Parcelize
 data object TextMateHighlightScreen : Screen {
@@ -194,8 +218,14 @@ class TextMateHighlightPresenter
             }
 
             // Tokenize on Dispatchers.Default whenever the sample, grammars, or themes change.
-            // Both dark and light AnnotatedStrings are pre-built so that theme switching is instant
-            // in the UI without re-triggering this effect.
+            // [CodeHighlighter] is used directly here instead of the higher-level
+            // [dev.textmate.compose.rememberHighlightedCode] or [dev.textmate.compose.CodeBlock]
+            // for three reasons:
+            //  1. Both dark and light AnnotatedStrings are pre-built in one pass so that theme
+            //     switching is instantaneous — no re-tokenization on toggle.
+            //  2. rememberHighlightedCode is @Composable and cannot be called from a presenter;
+            //     it also re-runs whenever the theme key changes.
+            //  3. measureTimedValue captures the tokenization duration for the metrics row.
             LaunchedEffect(selectedSample, grammarMap, darkTheme, lightTheme) {
                 val map = grammarMap ?: return@LaunchedEffect
                 val dark = darkTheme ?: return@LaunchedEffect
