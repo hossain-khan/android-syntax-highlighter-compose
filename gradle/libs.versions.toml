@@ -32,6 +32,9 @@ lifecycleRuntimeKtx = "2.10.0"
 metro = "1.0.0"
 androidxWebkit = "1.16.0"
 
+# https://developer.android.com/jetpack/androidx/releases/benchmark
+benchmarkJunit4 = "1.4.1"
+
 # https://github.com/hossain-khan/android-compose-highlight
 composeHighlight = "0.19.0"
 
@@ -56,6 +59,10 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+# AndroidX Benchmark - Microbenchmark
+# https://developer.android.com/jetpack/androidx/releases/benchmark
+androidx-benchmark-junit4 = { group = "androidx.benchmark", name = "benchmark-junit4", version.ref = "benchmarkJunit4" }
 
 # Circuit - ⚡️A Compose-driven architecture for Kotlin and Android applications.
 # https://github.com/slackhq/circuit/releases
@@ -93,6 +100,7 @@ kotlin-textmate-compose = { group = "io.github.ivan-magda", name = "kotlin-textm
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 # kotlin-android plugin is no longer needed with AGP 9.1+ (built-in Kotlin support)
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }

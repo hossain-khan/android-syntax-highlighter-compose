@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Syntax Highlight"
 include(":app")
+include(":microbenchmark")
