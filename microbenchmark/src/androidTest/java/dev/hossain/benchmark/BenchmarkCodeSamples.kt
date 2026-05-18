@@ -1,6 +1,32 @@
 package dev.hossain.benchmark
 
+import android.content.Context
+
+/**
+ * Code samples used across microbenchmark tests.
+ *
+ * Small inline samples (Kotlin, Python, JSON, JavaScript) represent realistic snippets.
+ * Large samples should be loaded from assets via [loadFromAssets] to avoid keeping
+ * multi-kilobyte strings in memory at class-load time and to allow benchmarks to use
+ * real-world source files.
+ *
+ * @see TextMateHighlightBenchmark
+ * @see ComposeHighlightBenchmark
+ */
 object BenchmarkCodeSamples {
+
+    /**
+     * Asset path for the real-world large JavaScript sample.
+     * This is the full `highlight.js` source (~1 051 lines) from the highlight.js project.
+     * Load it in `@Before` with [loadFromAssets] so asset I/O is excluded from benchmarks.
+     */
+    const val ASSET_JAVASCRIPT_LARGE = "samples/highlight.js"
+
+    /** Reads a UTF-8 text asset and returns its content as a [String]. */
+    fun loadFromAssets(
+        context: Context,
+        path: String,
+    ): String = context.assets.open(path).bufferedReader().use { it.readText() }
     val KOTLIN =
         """
         package com.example
@@ -118,9 +144,6 @@ object BenchmarkCodeSamples {
         export default UserService;
         """.trimIndent()
 
-    /** Kotlin code repeated 5× for medium-size benchmarks (~100 lines). */
+    /** Kotlin code repeated 5x for medium-size benchmarks (~100 lines). */
     val KOTLIN_MEDIUM: String = (1..5).joinToString("\n\n") { KOTLIN }
-
-    /** Kotlin code repeated ~40× for large-size benchmarks (~1000 lines). */
-    val KOTLIN_LARGE: String = (1..40).joinToString("\n\n") { KOTLIN }
 }

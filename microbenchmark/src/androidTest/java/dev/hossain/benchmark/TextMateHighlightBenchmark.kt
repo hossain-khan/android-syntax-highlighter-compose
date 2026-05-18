@@ -15,6 +15,20 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Benchmarks the TextMate on-device syntax highlighting pipeline.
+ *
+ * Grammars and themes are loaded once in [setup] so only the [CodeHighlighter.highlight] call
+ * is measured. Tests cover multiple languages and input sizes:
+ * - Small: short inline snippets from [BenchmarkCodeSamples]
+ * - Medium: ~100-line Kotlin snippet (5x repeat of the small sample)
+ * - Large: real-world 1051-line JavaScript file loaded from assets
+ *   ([BenchmarkCodeSamples.ASSET_JAVASCRIPT_LARGE])
+ *
+ * Note: [CodeHighlighter] is constructed inside [measureRepeated] to reflect the actual app
+ * usage pattern. If [CodeHighlighter] becomes reusable across calls, hoist it to a field and
+ * update these benchmarks accordingly.
+ */
 @RunWith(AndroidJUnit4::class)
 class TextMateHighlightBenchmark {
 
@@ -28,6 +42,9 @@ class TextMateHighlightBenchmark {
     private lateinit var darkTheme: Theme
     private lateinit var lightTheme: Theme
     private lateinit var oneDarkProTheme: Theme
+
+    /** Real-world JavaScript source loaded from assets - used for large-input benchmarks. */
+    private lateinit var javascriptLarge: String
 
     @Before
     fun setup() {
@@ -67,6 +84,9 @@ class TextMateHighlightBenchmark {
                 ThemeReader.readTheme(base, overlay)
             }
         }
+
+        // Load real-world large JavaScript source from assets - excluded from benchmarks
+        javascriptLarge = BenchmarkCodeSamples.loadFromAssets(context, BenchmarkCodeSamples.ASSET_JAVASCRIPT_LARGE)
     }
 
     @Test
@@ -84,9 +104,9 @@ class TextMateHighlightBenchmark {
     }
 
     @Test
-    fun highlightKotlin_large() {
+    fun highlightJavaScript_large() {
         benchmarkRule.measureRepeated {
-            CodeHighlighter(kotlinGrammar, darkTheme).highlight(BenchmarkCodeSamples.KOTLIN_LARGE)
+            CodeHighlighter(jsGrammar, darkTheme).highlight(javascriptLarge)
         }
     }
 

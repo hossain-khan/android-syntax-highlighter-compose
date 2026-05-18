@@ -15,6 +15,20 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Benchmarks the [AnnotatedString] building step for Shiki server-side highlight responses.
+ *
+ * The Shiki pipeline has two phases: (1) network call to the Shiki token service, and
+ * (2) converting the returned [HighlightDualResponse] tokens into a Compose [AnnotatedString].
+ * This benchmark isolates phase 2 using synthetic mock responses.
+ *
+ * NOTE - future improvement: [buildAnnotatedStringFromDualResponse] and [parseHexColor] below
+ * are local copies of the production functions in `ShikiRenderUtils.kt` (`:app` module). They
+ * exist here because those functions are `internal` and `:microbenchmark` cannot depend on
+ * `:app`. To ensure this benchmark always tests the real production logic, consider extracting
+ * these utilities into a shared module (e.g., `:shiki-render`) that both `:app` and
+ * `:microbenchmark` can depend on.
+ */
 @RunWith(AndroidJUnit4::class)
 class ShikiAnnotationBenchmark {
 

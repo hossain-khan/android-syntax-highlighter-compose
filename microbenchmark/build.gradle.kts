@@ -51,6 +51,6 @@ dependencies {
 
     // For ActivityScenario (compose-highlight WebView benchmark)
     androidTestImplementation(libs.androidx.activity.compose)
-    androidTestImplementation("androidx.test:core:1.6.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
 }

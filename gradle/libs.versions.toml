@@ -31,6 +31,8 @@ kotlinter = "5.4.2"
 lifecycleRuntimeKtx = "2.10.0"
 metro = "1.0.0"
 androidxWebkit = "1.16.0"
+androidxTestCore = "1.6.1"
+androidxTestRunner = "1.6.2"
 
 # https://developer.android.com/jetpack/androidx/releases/benchmark
 benchmarkJunit4 = "1.4.1"
@@ -63,6 +65,8 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 # AndroidX Benchmark - Microbenchmark
 # https://developer.android.com/jetpack/androidx/releases/benchmark
 androidx-benchmark-junit4 = { group = "androidx.benchmark", name = "benchmark-junit4", version.ref = "benchmarkJunit4" }
+androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTestCore" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
 
 # Circuit - ⚡️A Compose-driven architecture for Kotlin and Android applications.
 # https://github.com/slackhq/circuit/releases
