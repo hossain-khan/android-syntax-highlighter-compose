@@ -39,7 +39,7 @@ operations are suspend functions behind a `Mutex`.
 | **Theme format** | Shiki/VS Code themes (server-side) | VS Code JSON (`tokenColors`) | Highlight.js CSS (any community theme) |
 | **Custom themes** | Server configuration only | Load `.json` from assets | Load `.css` from assets, raw CSS, or `Map<selector, SpanStyle>` (Material 3 dynamic color support) |
 | **Thread model** | Network I/O on `Dispatchers.IO` | CPU-bound; runs on `Dispatchers.Default` | WebView JS bridge; suspend + `Mutex` on main thread |
-| **First-call latency** | Network RTT (~variable; depends on connectivity) | Grammar parse time (~12–97 ms/1k lines) | WebView warm-up (~200 ms cold; pre-warmable) |
+| **First-call latency** | Network RTT (variable; depends on connectivity) | Grammar load ~0.2–1.6 ms + highlight time (see benchmarks below) | WebView warm-up (~200 ms cold; pre-warmable) |
 | **Offline support** | No | Yes | Yes |
 | **APK size impact** | Minimal (SDK + HTTP client) | Grammar + theme JSON assets (user-controlled) | ~0.5 MB (Highlight.js bundle) |
 | **WebView dependency** | None | None | Required (minSdk 24+) |
@@ -51,8 +51,38 @@ operations are suspend functions behind a `Mutex`.
 | **Shared engine** | `ShikiClient` (stateless HTTP) | No provider concept; one `Grammar` per use | `HighlightThemeProvider` shares one WebView across the subtree |
 | **Thread-safety** | Inherently safe (stateless HTTP) | `Grammar` is **not** thread-safe | `HighlightEngine` is safe via `Mutex` |
 | **Timing metrics exposed** | `requestDurationMs`, `annotationDurationMs` | `measureTimedValue` wraps `CodeHighlighter.highlight()` | `HighlightTimings` (`jsBridge`, `jsonUnescape`, `htmlParse`, `treeWalk`, `themeParse`, `total`) |
-| **Benchmarks published** | No | Yes (JMH, lines/sec) | Yes (AndroidX Microbenchmark, ms/snippet) |
+| **Benchmarks published** | `buildAnnotatedString` only (AndroidX Microbenchmark; network RTT excluded) | Yes (AndroidX Microbenchmark, ms/snippet) | Yes (AndroidX Microbenchmark, ms/snippet) |
 | **Current version (this app)** | `sdk-1.0.5` | `0.1.0` ✓ latest | `0.19.0` ✓ latest |
+
+---
+
+## Performance Benchmarks
+
+Measured on a **Pixel 9 Pro XL (API 36, 8-core 3.10 GHz)** using AndroidX Microbenchmark. Full results: [`BENCHMARK_RESULTS_P9PXL.md`](microbenchmark/results/BENCHMARK_RESULTS_P9PXL.md).
+
+### Highlighting Time by Code Size (Kotlin)
+
+| Code Size | **kotlin-textmate** | **compose-highlight** | **Shiki** (`buildAnnotatedString` only) |
+|-----------|:-------------------:|:---------------------:|:---------------------------------------:|
+| Small (~25 lines) | 2.18 ms | 7.32 ms | 0.04 ms |
+| Medium (~100 lines) | 10.11 ms | 14.33 ms | - |
+| Large (~1000 lines) | 78.79 ms | 40.96 ms | 0.60 ms |
+
+> **Shiki note**: the `buildAnnotatedString` step is measured client-side only; total latency includes network RTT to the token service.
+
+> **compose-highlight note**: times reflect the full WebView JS bridge round-trip (`highlightBothThemes`); the WebView must be pre-warmed for steady-state numbers.
+
+### Grammar & Theme Load Time (kotlin-textmate, one-time startup cost)
+
+| Asset | Median (ms) |
+|-------|:-----------:|
+| JSON grammar | 0.16 |
+| Kotlin grammar | 0.23 |
+| Dark+ theme | 0.56 |
+| Monokai theme | 0.64 |
+| One Dark Pro theme | 1.42 |
+| Python grammar | 1.53 |
+| JavaScript grammar | 1.59 |
 
 ---
 
