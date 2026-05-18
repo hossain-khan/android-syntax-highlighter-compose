@@ -10,11 +10,6 @@ An Android app that showcases three different **syntax highlighting** approaches
 
 All approaches produce a Compose `AnnotatedString` and share the same code samples and UI structure, making it easy to compare their output, performance, and trade-offs side by side.
 
-> [!NOTE]
-> This project was developed with the assistance of AI coding agents (GitHub Copilot).
-> Code, architecture, tests, and documentation were generated or refined through
-> AI-assisted pair programming. Review accordingly before using in production.
-
 ## Features
 
 - 🆚 **Side-by-side comparison** — compare all three approaches (output, performance, device footprint) together
