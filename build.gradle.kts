@@ -4,6 +4,9 @@ plugins {
     // Project: https://developer.android.com/build
     alias(libs.plugins.android.application) apply false
 
+    // Applies the Android library plugin (used by :microbenchmark module).
+    alias(libs.plugins.android.library) apply false
+
     // Kotlin support is built into AGP 9.1+ - kotlin-android plugin is no longer needed
     // See: https://developer.android.com/build/migrate-to-built-in-kotlin
 
