@@ -89,8 +89,42 @@ enum class ComposeHighlightThemePair(
  * which runs [Highlight.js](https://highlightjs.org/) inside a hidden WebView and converts
  * the tokenised HTML output to a native Compose [AnnotatedString].
  *
- * No network calls are made; all highlighting happens on-device via a single [dev.hossain.highlight.engine.HighlightEngine]
- * instance. Timing reflects the full WebView JS round-trip.
+ * No network calls are made; all highlighting happens on-device via a single
+ * [dev.hossain.highlight.engine.HighlightEngine] instance. Timing reflects the full WebView
+ * JS round-trip.
+ *
+ * ## Available compose-highlight APIs
+ *
+ * The library ships four levels of API for rendering highlighted code:
+ *
+ * - **`SyntaxHighlightedCode`** — highest-level drop-in composable. Handles background,
+ *   horizontal scroll, padding, line numbers, copy button, language label, and
+ *   [androidx.compose.foundation.text.selection.SelectionContainer] automatically. Best for
+ *   static single-theme displays.
+ * - **[dev.hossain.highlight.ui.rememberHighlightedCode]** — returns
+ *   `State<AnnotatedString?>`. Re-runs automatically when `code`, `language`, or `theme`
+ *   changes. Use when you need full control over the `Text` call.
+ * - **[dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes]** — fires a single JS call
+ *   and returns both light **and** dark [androidx.compose.ui.text.AnnotatedString]s. Theme
+ *   switching after the initial highlight is instant with no re-highlighting.
+ * - **[dev.hossain.highlight.engine.HighlightEngine]** — headless engine. Use `highlight()` or
+ *   `highlightBothThemes()` directly for programmatic highlighting outside of composition.
+ *
+ * ## Why this screen uses [dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes]
+ *
+ * This screen has requirements that go beyond what `SyntaxHighlightedCode` covers:
+ *
+ * 1. **Instant dual-theme toggling** — a single JS call produces both light and dark
+ *    [androidx.compose.ui.text.AnnotatedString]s. The dark/light toggle in the top bar is a
+ *    free state read with zero re-highlighting. `SyntaxHighlightedCode` renders one theme at a
+ *    time and would re-highlight on every toggle.
+ * 2. **Per-stage timing metrics** — the screen displays a breakdown of
+ *    [dev.hossain.highlight.engine.HighlightTimings] fields (`jsBridge`, `jsonUnescape`,
+ *    `htmlParse`, `treeWalk`, `themeParse`, `total`) sourced from `themedResult?.timings`.
+ *    `SyntaxHighlightedCode` does not expose internal timing data to callers.
+ * 3. **Custom layout control** — the screen combines language + theme dropdowns, a scrollable
+ *    code block, and the metrics row in a single `Column`. Writing the `Text` directly avoids
+ *    suppressing `SyntaxHighlightedCode`'s own copy button and language label.
  */
 @Parcelize
 data object ComposeHighlightScreen : Screen {
@@ -258,7 +292,14 @@ private fun ReadyContent(
         }
     val hlLanguage = state.selectedSample.toHighlightJsLanguage()
 
-    // Single JS call produces both light + dark AnnotatedStrings; theme switching is instant.
+    // [rememberHighlightedCodeBothThemes] is used here instead of the higher-level
+    // SyntaxHighlightedCode composable for three reasons:
+    //  1. A single JS call produces both light and dark AnnotatedStrings so that theme
+    //     toggling is instantaneous — no re-highlighting on each switch.
+    //  2. themedResult.timings exposes per-stage HighlightTimings (jsBridge, htmlParse,
+    //     treeWalk, etc.) for the metrics row; SyntaxHighlightedCode does not surface these.
+    //  3. The screen owns its own layout (dropdowns + code block + metrics row) which
+    //     is simpler to compose than overriding SyntaxHighlightedCode's built-in chrome.
     val themedResult by rememberHighlightedCodeBothThemes(
         code = state.selectedSample.code,
         language = hlLanguage,
