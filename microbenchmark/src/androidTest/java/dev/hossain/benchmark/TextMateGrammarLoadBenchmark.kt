@@ -12,6 +12,16 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/**
+ * Benchmarks the cost of loading TextMate grammar and theme files from assets.
+ *
+ * Grammar and theme loading is a one-time startup cost that happens before any highlighting
+ * can occur. These benchmarks measure how long each file takes to parse so we can track
+ * regressions and compare grammar complexity (e.g., Python vs Kotlin vs JavaScript).
+ *
+ * [JoniOnigLib] is intentionally created outside [BenchmarkRule.measureRepeated] so that
+ * only the grammar parse/construction time is included in the measurement.
+ */
 @RunWith(AndroidJUnit4::class)
 class TextMateGrammarLoadBenchmark {
 

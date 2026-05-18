@@ -16,6 +16,19 @@ import org.junit.runner.RunWith
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
+/**
+ * Benchmarks the compose-highlight library's WebView-backed JS highlighting engine.
+ *
+ * The [HighlightEngine] is initialized once in [setup] (including WebView warm-up) so only
+ * the [HighlightEngine.highlightBothThemes] call is measured per iteration.
+ * Tests cover multiple languages and input sizes:
+ * - Small: short inline snippets from [BenchmarkCodeSamples]
+ * - Medium: ~100-line Kotlin snippet (5x repeat of the small sample)
+ * - Large: real-world 1051-line JavaScript file loaded from assets
+ *   ([BenchmarkCodeSamples.ASSET_JAVASCRIPT_LARGE])
+ *
+ * A [BenchmarkActivity] is launched to provide a valid [Context] for WebView creation.
+ */
 @RunWith(AndroidJUnit4::class)
 class ComposeHighlightBenchmark {
 
@@ -26,6 +39,9 @@ class ComposeHighlightBenchmark {
     private lateinit var engine: HighlightEngine
     private lateinit var lightTheme: HighlightTheme
     private lateinit var darkTheme: HighlightTheme
+
+    /** Real-world JavaScript source loaded from assets - used for large-input benchmarks. */
+    private lateinit var javascriptLarge: String
 
     @Before
     fun setup() {
@@ -43,6 +59,11 @@ class ComposeHighlightBenchmark {
         // Initialize the engine (warm up WebView)
         runBlocking {
             engine.initialize()
+        }
+
+        // Load real-world large JavaScript source from assets - excluded from benchmarks
+        scenario.onActivity { activity ->
+            javascriptLarge = BenchmarkCodeSamples.loadFromAssets(activity, BenchmarkCodeSamples.ASSET_JAVASCRIPT_LARGE)
         }
     }
 
@@ -123,12 +144,12 @@ class ComposeHighlightBenchmark {
     }
 
     @Test
-    fun highlightKotlin_large_bothThemes() {
+    fun highlightJavaScript_large_bothThemes() {
         benchmarkRule.measureRepeated {
             runBlocking {
                 engine.highlightBothThemes(
-                    code = BenchmarkCodeSamples.KOTLIN_LARGE,
-                    language = "kotlin",
+                    code = javascriptLarge,
+                    language = "javascript",
                     lightTheme = lightTheme,
                     darkTheme = darkTheme,
                 )
