@@ -62,7 +62,7 @@ fun AppInfoBottomSheet(modifier: Modifier = Modifier) {
     val versionName =
         remember {
             @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "—"
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
         }
 
     Column(
