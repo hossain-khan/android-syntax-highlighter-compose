@@ -20,7 +20,7 @@ and VS Code JSON theme files from assets, then tokenizes code line-by-line using
 (Java Oniguruma) regex engine — entirely in-process, no WebView involved. Output is an
 `AnnotatedString` built directly from token scopes matched against theme rules.
 
-**compose-highlight** (`dev.hossain:compose-highlight:0.19.0`)  
+**compose-highlight** (`dev.hossain:compose-highlight:0.20.0`)  
 Runs [Highlight.js](https://highlightjs.org/) inside a single hidden WebView. Code is sent
 over a JS bridge, tokenized in JavaScript, the resulting HTML is parsed via jsoup, and CSS
 theme selectors are mapped to `SpanStyle`s to produce an `AnnotatedString`. All WebView
