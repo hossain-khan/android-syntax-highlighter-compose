@@ -38,7 +38,7 @@ androidxTestRunner = "1.6.2"
 benchmarkJunit4 = "1.4.1"
 
 # https://github.com/hossain-khan/android-compose-highlight
-composeHighlight = "0.21.0"
+composeHighlight = "0.22.0"
 
 # https://github.com/ivan-magda/kotlin-textmate
 kotlinTextmate = "0.1.0"
