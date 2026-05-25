@@ -53,8 +53,14 @@ Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/s
 | **Languages** | Unlimited* | 600+ | 190+ (bundled) |
 | **Compose-native** | ❌ | ✅ | ✅ |
 | **Setup** | 1 dependency | Bring grammars | 1 dependency |
+| **Performance** (avg)¹ | **n/a** | ~8.4ms | ~6.4ms |
 
-**→ Full details & benchmarks:** [APK Size Impact Analysis](microbenchmark/apk-impact-analysis/)
+¹ Median time to highlight small code sample (Pixel 9 Pro XL + Galaxy S24 Ultra average). Shiki performance depends on network latency; shown values are for on-device processing only (TextMate & Compose Highlight).
+
+**→ Full details & benchmarks:** 
+- [APK Size Impact Analysis](microbenchmark/apk-impact-analysis/)
+- [Benchmark Results — Pixel 9 Pro XL](microbenchmark/results/BENCHMARK_RESULTS_P9PXL.md)
+- [Benchmark Results — Galaxy S24 Ultra](microbenchmark/results/BENCHMARK_RESULTS_S24ULTRA.md)
 
 ## Tech Stack
 
