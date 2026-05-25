@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Comparison: compose-highlight vs kotlin-textmate</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        :root {
+            --bg: #f8f9fa; --bg-card: #ffffff; --text: #212529; --text-muted: #6c757d;
+            --text-heading: #495057; --border: #e9ecef; --bg-metric: #f8f9fa; --bg-th: #f8f9fa;
+            --positive: #dc3545; --negative: #198754; --shadow: rgba(0,0,0,0.1);
+            --toggle-bg: #e9ecef; --toggle-knob: #ffffff;
+            --lib-a: #4e79a7; --lib-b: #e15759;
+            --callout-bg: #e8f4fd; --callout-border: #0d6efd;
+            --winner-bg: #d4edda; --winner-border: #198754;
+        }
+        [data-theme="dark"] {
+            --bg: #1a1a2e; --bg-card: #16213e; --text: #e4e4e4; --text-muted: #a0a0a0;
+            --text-heading: #c8c8c8; --border: #2a2a4a; --bg-metric: #1a1a2e; --bg-th: #1a1a2e;
+            --positive: #ff6b6b; --negative: #51cf66; --shadow: rgba(0,0,0,0.3);
+            --toggle-bg: #2a2a4a; --toggle-knob: #e4e4e4;
+            --lib-a: #5b9bd5; --lib-b: #ff6b6b;
+            --callout-bg: #1a2a3e; --callout-border: #6ea8fe;
+            --winner-bg: #1a3a2e; --winner-border: #51cf66;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 2rem; transition: background 0.3s, color 0.3s; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
+        .header-text h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .subtitle { color: var(--text-muted); }
+        .theme-toggle { position: relative; width: 56px; height: 28px; background: var(--toggle-bg); border-radius: 14px; cursor: pointer; transition: background 0.3s; border: none; flex-shrink: 0; }
+        .theme-toggle .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: var(--toggle-knob); border-radius: 50%; transition: transform 0.3s; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        [data-theme="dark"] .theme-toggle .knob { transform: translateX(28px); }
+        .theme-toggle .icon { font-size: 12px; }
+        .card { background: var(--bg-card); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px var(--shadow); transition: background 0.3s, box-shadow 0.3s; }
+        .card h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-heading); }
+        .card h3 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-heading); }
+        .callout { background: var(--callout-bg); border-left: 4px solid var(--callout-border); padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.5; }
+        .winner-callout { background: var(--winner-bg); border-left: 4px solid var(--winner-border); padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.5; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1rem; }
+        th, td { padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-th); font-weight: 600; color: var(--text-heading); }
+        td:nth-child(n+2), th:nth-child(n+2) { text-align: right; }
+        .highlight-row { font-weight: 700; border-top: 2px solid var(--border); }
+        .diff-positive { color: var(--positive); font-weight: 600; }
+        .diff-negative { color: var(--negative); font-weight: 600; }
+        .badge { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 700; color: white; vertical-align: middle; margin-left: 0.5rem; }
+        .badge-a { background: var(--lib-a); }
+        .badge-b { background: var(--lib-b); }
+        .badge-winner { background: var(--negative); }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .metric { text-align: center; padding: 1rem; background: var(--bg-metric); border-radius: 8px; transition: background 0.3s; }
+        .metric .value { font-size: 1.5rem; font-weight: 700; }
+        .metric .label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .metric.lib-a .value { color: var(--lib-a); }
+        .metric.lib-b .value { color: var(--lib-b); }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+        .chart-container { position: relative; height: 300px; margin: 1rem 0; }
+        .pro-con { list-style: none; padding: 0; }
+        .pro-con li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; }
+        .pro-con li::before { position: absolute; left: 0; }
+        .pro-con li.pro::before { content: "+"; color: var(--negative); font-weight: 700; }
+        .pro-con li.con::before { content: "\2212"; color: var(--positive); font-weight: 700; }
+        .pro-con li.neutral::before { content: "\2022"; color: var(--text-muted); }
+        .footer { text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 2rem; }
+        .section-divider { border: none; border-top: 2px solid var(--border); margin: 2rem 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-text">
+                <h1>Syntax Highlighting Library Comparison</h1>
+                <p class="subtitle">APK size impact &amp; feature comparison for Android Compose</p>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+                <div class="knob"><span class="icon" id="themeIcon">&#9788;</span></div>
+            </button>
+        </div>
+
+        <div class="callout">
+            <strong>About this comparison:</strong> Both libraries were measured using the same 2-phase methodology that isolates the true incremental APK cost by subtracting shared dependencies (Compose foundation, animations, etc.) already present in realistic apps. Results reflect release builds with R8 minification enabled.
+        </div>
+
+        <!-- Quick Comparison -->
+        <div class="card">
+            <h2>At a Glance</h2>
+            <div class="summary-grid">
+                <div class="metric lib-a">
+                    <div class="value">+628 KB</div>
+                    <div class="label">compose-highlight 0.22.0<br>Release APK (Phase 2)</div>
+                </div>
+                <div class="metric lib-b">
+                    <div class="value">+1.6 MB</div>
+                    <div class="label">kotlin-textmate 0.1.0<br>Release APK (Phase 2)</div>
+                </div>
+                <div class="metric">
+                    <div class="value" style="color: var(--text-heading);">2.5x</div>
+                    <div class="label">kotlin-textmate is heavier<br>than compose-highlight</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="card">
+            <h2>Architecture</h2>
+            <table>
+                <thead>
+                    <tr><th>Aspect</th><th>compose-highlight<span class="badge badge-a">CH</span></th><th>kotlin-textmate<span class="badge badge-b">KT</span></th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Approach</td><td>WebView + highlight.js</td><td>Pure Kotlin TextMate engine</td></tr>
+                    <tr><td>Rendering</td><td>HTML/CSS in WebView</td><td>Compose AnnotatedString</td></tr>
+                    <tr><td>Regex engine</td><td>JavaScript (V8)</td><td>Joni (Java Oniguruma)</td></tr>
+                    <tr><td>Grammar format</td><td>highlight.js language defs</td><td>.tmLanguage.json (VS Code)</td></tr>
+                    <tr><td>Theme format</td><td>CSS stylesheets</td><td>VS Code JSON themes</td></tr>
+                    <tr><td>Language count</td><td>190+ (bundled)</td><td>600+ (bring-your-own grammars)</td></tr>
+                    <tr><td>Compose-native</td><td>No (WebView interop)</td><td>Yes (AnnotatedString)</td></tr>
+                    <tr><td>Requires WebView</td><td>Yes</td><td>No</td></tr>
+                    <tr><td>Thread-safe</td><td>Main thread only (WebView)</td><td>No (mutable Grammar state)</td></tr>
+                    <tr><td>Incremental tokenization</td><td>N/A (full HTML render)</td><td>Not built-in (line state available)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Size Breakdown -->
+        <div class="card">
+            <h2>APK Size Breakdown (Phase 2 &mdash; True Library Cost)</h2>
+            <table>
+                <thead>
+                    <tr><th>Category</th><th>compose-highlight</th><th>kotlin-textmate</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>dex</td><td>+297.1 KB</td><td>+249.6 KB</td><td>Similar core code size</td></tr>
+                    <tr><td>arsc</td><td>+9.1 KB</td><td>0 B</td><td>CH adds string resources</td></tr>
+                    <tr><td>manifest</td><td>-32 B</td><td>0 B</td><td>Negligible</td></tr>
+                    <tr><td>res</td><td>+2 B</td><td>-4 B</td><td>Negligible</td></tr>
+                    <tr><td>native</td><td>+12.6 KB</td><td>-19.3 KB</td><td>CH adds native; KT removes (R8)</td></tr>
+                    <tr><td>asset</td><td class="diff-positive">+308.8 KB</td><td>+33.9 KB</td><td>CH bundles highlight.min.js (~305 KB)</td></tr>
+                    <tr><td>other</td><td>+780 B</td><td class="diff-positive">+1.3 MB</td><td>KT: Joni jcodings encoding tables</td></tr>
+                    <tr class="highlight-row"><td>TOTAL</td><td class="diff-positive">+628.4 KB</td><td class="diff-positive">+1.6 MB</td><td></td></tr>
+                </tbody>
+            </table>
+            <div class="chart-container">
+                <canvas id="breakdownChart"></canvas>
+            </div>
+        </div>
+
+        <!-- What's in the size -->
+        <div class="card">
+            <h2>What Drives the Size</h2>
+            <div class="two-col">
+                <div>
+                    <h3>compose-highlight <span class="badge badge-a">628 KB</span></h3>
+                    <table>
+                        <tbody>
+                            <tr><td>highlight.min.js (bundled)</td><td>~309 KB</td></tr>
+                            <tr><td>Library dex (jsoup + highlight bridge)</td><td>~297 KB</td></tr>
+                            <tr><td>Theme CSS files</td><td>~9 KB</td></tr>
+                            <tr><td>Native / other</td><td>~13 KB</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <h3>kotlin-textmate <span class="badge badge-b">1.6 MB</span></h3>
+                    <table>
+                        <tbody>
+                            <tr><td>Joni jcodings encoding tables</td><td>~1.3 MB</td></tr>
+                            <tr><td>Library dex (Joni + tokenizer + Compose)</td><td>~250 KB</td></tr>
+                            <tr><td>Grammar JSON files (4 languages)</td><td>~34 KB</td></tr>
+                            <tr><td>Theme JSON files (4 files)</td><td>~4 KB</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Feature Comparison -->
+        <div class="card">
+            <h2>Feature Comparison</h2>
+            <table>
+                <thead>
+                    <tr><th>Feature</th><th>compose-highlight</th><th>kotlin-textmate</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Line numbers</td><td>Yes (built-in)</td><td>No (manual)</td></tr>
+                    <tr><td>Copy button</td><td>Yes (slot API)</td><td>No</td></tr>
+                    <tr><td>Language label</td><td>Yes (slot API)</td><td>No</td></tr>
+                    <tr><td>Soft wrap toggle</td><td>No</td><td>Yes</td></tr>
+                    <tr><td>Theme provider</td><td>Yes (HighlightThemeProvider)</td><td>Manual (pass theme to CodeBlock)</td></tr>
+                    <tr><td>Dark/light auto-switch</td><td>Yes (built-in)</td><td>Manual</td></tr>
+                    <tr><td>Custom rendering</td><td>Limited (WebView)</td><td>Yes (AnnotatedString)</td></tr>
+                    <tr><td>Text selection</td><td>WebView selection</td><td>Native Compose selection</td></tr>
+                    <tr><td>Offline support</td><td>Yes</td><td>Yes</td></tr>
+                    <tr><td>minSdk</td><td>21</td><td>21</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pros/Cons -->
+        <div class="card">
+            <h2>Pros &amp; Cons</h2>
+            <div class="two-col">
+                <div>
+                    <h3>compose-highlight <span class="badge badge-a">CH</span></h3>
+                    <ul class="pro-con">
+                        <li class="pro">Smaller APK impact (628 KB)</li>
+                        <li class="pro">190+ languages bundled out-of-the-box</li>
+                        <li class="pro">Built-in UI features (line numbers, copy, label)</li>
+                        <li class="pro">Automatic dark/light theme switching</li>
+                        <li class="con">WebView dependency (heavier runtime)</li>
+                        <li class="con">Not truly Compose-native rendering</li>
+                        <li class="con">Limited customization of rendered output</li>
+                        <li class="con">Main-thread only (WebView constraint)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>kotlin-textmate <span class="badge badge-b">KT</span></h3>
+                    <ul class="pro-con">
+                        <li class="pro">Pure Compose rendering (AnnotatedString)</li>
+                        <li class="pro">600+ languages via standard TextMate grammars</li>
+                        <li class="pro">No WebView dependency</li>
+                        <li class="pro">Full control over rendered output</li>
+                        <li class="pro">Native text selection</li>
+                        <li class="con">Larger APK impact (1.6 MB)</li>
+                        <li class="con">Joni encoding tables are heavy (~1.3 MB)</li>
+                        <li class="con">Bring-your-own grammar files</li>
+                        <li class="con">Fewer built-in UI conveniences</li>
+                        <li class="con">v0.1.0 — early stage, no injection grammars</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="card">
+            <h2>When to Use Which</h2>
+            <div class="winner-callout">
+                <strong>Choose compose-highlight if:</strong> APK size is a priority, you need quick integration with minimal setup, you want built-in UI features (line numbers, copy button), or you're already using WebView elsewhere in your app.
+            </div>
+            <div class="callout">
+                <strong>Choose kotlin-textmate if:</strong> You need Compose-native rendering with full text selection, you want to use standard VS Code grammars/themes, you need fine-grained control over the highlighted output, or you're building a code editor where native text interaction matters.
+            </div>
+            <table>
+                <thead><tr><th>Priority</th><th>Recommended</th></tr></thead>
+                <tbody>
+                    <tr><td>Smallest APK size</td><td>compose-highlight <span class="badge badge-a">CH</span></td></tr>
+                    <tr><td>Most languages supported</td><td>kotlin-textmate <span class="badge badge-b">KT</span></td></tr>
+                    <tr><td>Compose-native UX</td><td>kotlin-textmate <span class="badge badge-b">KT</span></td></tr>
+                    <tr><td>Fastest integration</td><td>compose-highlight <span class="badge badge-a">CH</span></td></tr>
+                    <tr><td>Code editor use case</td><td>kotlin-textmate <span class="badge badge-b">KT</span></td></tr>
+                    <tr><td>Read-only code display</td><td>compose-highlight <span class="badge badge-a">CH</span></td></tr>
+                    <tr><td>No WebView dependency</td><td>kotlin-textmate <span class="badge badge-b">KT</span></td></tr>
+                    <tr><td>Production maturity</td><td>compose-highlight <span class="badge badge-a">CH</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Methodology -->
+        <div class="card">
+            <h2>Methodology Notes</h2>
+            <table>
+                <thead><tr><th></th><th>compose-highlight</th><th>kotlin-textmate</th></tr></thead>
+                <tbody>
+                    <tr><td>Version tested</td><td>0.22.0</td><td>0.1.0</td></tr>
+                    <tr><td>Enriched baseline includes</td><td>WebKit, foundation, animation</td><td>Gson, foundation, animation</td></tr>
+                    <tr><td>Languages in showcase</td><td>Kotlin, Python, Java, Swift</td><td>Kotlin, JavaScript, JSON, Markdown</td></tr>
+                    <tr><td>compileSdk</td><td>36</td><td>36</td></tr>
+                    <tr><td>R8 minification</td><td>Yes</td><td>Yes</td></tr>
+                    <tr><td>Compose BOM</td><td>2026.03.01</td><td>2026.03.01</td></tr>
+                </tbody>
+            </table>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.75rem;">
+                Each library has a different enriched baseline tailored to its shared dependencies. compose-highlight depends on WebKit (WebView); kotlin-textmate depends on Gson (JSON parsing). Foundation and animation are shared by both baselines. The Phase 2 delta isolates only the library-specific cost.
+            </p>
+        </div>
+
+        <p class="footer">
+            Generated from measurements on 2026-05-24 using <a href="https://github.com/JakeWharton/diffuse">diffuse</a>
+            &bull; <a href="https://github.com/hossain-khan/android-compose-highlight">compose-highlight</a>
+            &bull; <a href="https://github.com/ivan-magda/kotlin-textmate">kotlin-textmate</a>
+        </p>
+    </div>
+
+    <script>
+        function getTheme() { return localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+        function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); document.getElementById('themeIcon').innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;'; updateChart(theme); }
+        function toggleTheme() { const c = document.documentElement.getAttribute('data-theme'); applyTheme(c === 'dark' ? 'light' : 'dark'); }
+
+        let breakdownChart;
+        function chartColors(theme) {
+            return theme === 'dark'
+                ? { libA: '#5b9bd5', libB: '#ff6b6b', grid: 'rgba(255,255,255,0.1)', text: '#a0a0a0' }
+                : { libA: '#4e79a7', libB: '#e15759', grid: 'rgba(0,0,0,0.1)', text: '#666666' };
+        }
+
+        function createChart(theme) {
+            const colors = chartColors(theme);
+            const ctx = document.getElementById('breakdownChart');
+            breakdownChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['dex', 'arsc', 'native', 'asset', 'other', 'TOTAL'],
+                    datasets: [
+                        {
+                            label: 'compose-highlight',
+                            data: [297.1, 9.1, 12.6, 308.8, 0.8, 628.4],
+                            backgroundColor: colors.libA,
+                        },
+                        {
+                            label: 'kotlin-textmate',
+                            data: [249.6, 0, 0, 33.9, 1331.2, 1613.6],
+                            backgroundColor: colors.libB,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: colors.text } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let val = context.parsed.y;
+                                    if (val >= 1024) return context.dataset.label + ': +' + (val/1024).toFixed(1) + ' MB';
+                                    return context.dataset.label + ': +' + val.toFixed(1) + ' KB';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Size Delta (KB)', color: colors.text },
+                            grid: { color: colors.grid },
+                            ticks: { color: colors.text }
+                        },
+                        x: {
+                            grid: { color: colors.grid },
+                            ticks: { color: colors.text }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(theme) {
+            if (!breakdownChart) return;
+            const colors = chartColors(theme);
+            breakdownChart.data.datasets[0].backgroundColor = colors.libA;
+            breakdownChart.data.datasets[1].backgroundColor = colors.libB;
+            breakdownChart.options.plugins.legend.labels.color = colors.text;
+            breakdownChart.options.scales.y.title.color = colors.text;
+            breakdownChart.options.scales.y.grid.color = colors.grid;
+            breakdownChart.options.scales.y.ticks.color = colors.text;
+            breakdownChart.options.scales.x.grid.color = colors.grid;
+            breakdownChart.options.scales.x.ticks.color = colors.text;
+            breakdownChart.update();
+        }
+
+        const initialTheme = getTheme();
+        applyTheme(initialTheme);
+        createChart(initialTheme);
+    </script>
+</body>
+</html>
