@@ -50,12 +50,12 @@ Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/s
 | **APK Impact** | ~20 KB | **+1.6 MB** | ✅ **+628 KB** |
 | **Rendering** | Server | Pure Compose | WebView |
 | **Offline** | ❌ Network required | ✅ Fully offline | ✅ Fully offline |
-| **Languages** | Unlimited* | **600+*** (any VS Code grammar) | 190+ (bundled) |
+| **Languages** | Unlimited* | ✅ **250+*** (any VS Code grammar) | 190+ (bundled) |
 | **Compose-native** | ❌ | ✅ | ✅ |
 | **Setup** | Add 1 lib + server URL | Add 1 lib + bring grammars | Add 1 lib |
 | **Performance** (avg)¹ | **n/a** | ~8.4ms | ~6.4ms |
 
-* TextMate can load any TextMate/VS Code grammar format; 600+ are available in the VS Code ecosystem.
+* TextMate can load any TextMate/VS Code grammar format; 250+ are available in the VS Code ecosystem.
 
 ¹ Median time to highlight small code sample (Pixel 9 Pro XL + Galaxy S24 Ultra average). Shiki performance depends on network latency; shown values are for on-device processing only (TextMate & Compose Highlight).
 
