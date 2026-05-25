@@ -48,7 +48,7 @@ Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/s
 | Aspect | Shiki | TextMate | Compose Highlight |
 |--------|-------|----------|-------------------|
 | **APK Impact** | ~20 KB | **+1.6 MB** | ✅ **+628 KB** |
-| **Rendering** | Server | Pure Compose | WebView |
+| **Grammer/Rendering** | <img src="microbenchmark/logos/api-interface.svg" height="18"> Server | <img src="microbenchmark/logos/jetpack-compose-logo.svg" height="18"> Pure Compose | <img src="microbenchmark/logos/chromium-logo.svg" height="18"> WebView |
 | **Offline** | ❌ Network required | ✅ Fully offline | ✅ Fully offline |
 | **Languages** | Unlimited* | ✅ **250+*** (any VS Code grammar) | 190+ (bundled) |
 | **Compose-native** | ❌ | ✅ | ✅ |
