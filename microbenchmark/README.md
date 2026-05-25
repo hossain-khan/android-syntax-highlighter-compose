@@ -39,9 +39,9 @@ For production-quality results, connect a physical device and run:
 ## Output
 
 Results are generated as:
-- **JSON profile** — `microbenchmark/build/outputs/connected_android_test/...`
-- **Studio Profiler traces** — Available in Android Studio's Profiler integration
-- **Markdown report** — Generate manually from JSON (see scripts/)
+- **Text output files** — `microbenchmark/build/outputs/connected_android_test_additional_output/...`
+- **Studio Profiler traces** — Perfetto and method traces for each benchmark
+- **Markdown report** — Generate using `python3 scripts/benchmark_report.py`
 
 ### View Results in Android Studio
 
@@ -49,10 +49,25 @@ Results are generated as:
 2. Android Studio → Profiler → Select the benchmark run
 3. Examine flame charts and method traces
 
+### Generate Markdown Report
+
+After running benchmarks, generate a Markdown report:
+
+```bash
+python3 scripts/benchmark_report.py
+```
+
+This will create a report (e.g., `BENCHMARK_RESULTS_S24ULTRA.md`) with:
+- Device information
+- All benchmark results organized by category
+- Median times and allocation counts
+- Cross-library comparison summary
+
 ## Benchmark Results
 
 Latest results are stored in:
 - [BENCHMARK_RESULTS_P9PXL.md](results/BENCHMARK_RESULTS_P9PXL.md) — Pixel 9 Pro XL results
+- [BENCHMARK_RESULTS_S24ULTRA.md](results/BENCHMARK_RESULTS_S24ULTRA.md) — Galaxy S24 Ultra results
 
 ## Notes
 
