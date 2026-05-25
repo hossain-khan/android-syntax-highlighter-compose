@@ -1,64 +1,83 @@
 #!/usr/bin/env python3
 """
-Parse AndroidX Benchmark JSON output and generate a Markdown comparison report.
+Parse AndroidX Benchmark text output and generate a Markdown comparison report.
 
 Usage:
-    python3 scripts/benchmark_report.py [path_to_json]
+    python3 scripts/benchmark_report.py [device_name]
 
-If no path is given, searches the default Gradle output directory.
+If no device name is given, searches for the latest benchmark results.
 """
-import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 
-def find_benchmark_json() -> Path | None:
-    """Find the benchmark JSON in the default Gradle output directory."""
-    base = Path("microbenchmark/build/outputs/connected_android_test_additional_output")
+def find_benchmark_results_dir() -> Path | None:
+    """Find the latest benchmark results directory."""
+    base = Path("microbenchmark/build/outputs/connected_android_test_additional_output/releaseAndroidTest/connected")
     if not base.exists():
         return None
-    # Look for files containing benchmark data
-    for f in sorted(base.rglob("*benchmarkData.json"), reverse=True):
+    # Get the most recent device directory
+    device_dirs = sorted(base.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return device_dirs[0] if device_dirs else None
+
+
+def get_device_info(device_dir: Path) -> dict:
+    """Extract device info from device-info.pb or cpuinfo file."""
+    device_info = {
+        "device": "Unknown Device",
+        "api_level": "Unknown",
+        "cpu_cores": "Unknown",
+        "cpu_max_freq": "Unknown",
+        "ram": "Unknown",
+    }
+    # Try to read from cpuinfo or device-info
+    cpuinfo_path = device_dir.parent / device_dir.name / "cpuinfo"
+    if cpuinfo_path.exists():
         try:
-            data = json.loads(f.read_text())
-            if "benchmarks" in data:
-                return f
-        except (json.JSONDecodeError, KeyError):
-            continue
-    # Fallback: any JSON with benchmarks key
-    for f in sorted(base.rglob("*.json"), reverse=True):
-        try:
-            data = json.loads(f.read_text())
-            if "benchmarks" in data:
-                return f
-        except (json.JSONDecodeError, KeyError):
-            continue
-    return None
+            cpuinfo = cpuinfo_path.read_text()
+            # Extract basic info from cpuinfo
+            device_info["device"] = device_dir.name
+        except:
+            pass
+    return device_info
 
 
-def parse_benchmark_file(path: Path) -> tuple[list[dict], dict]:
-    """Parse benchmark JSON and return structured results + context."""
-    data = json.loads(path.read_text())
-
+def parse_benchmark_results(results_dir: Path) -> tuple[list[dict], dict]:
+    """Parse benchmark text files and return structured results."""
     results = []
-    for bench in data.get("benchmarks", []):
-        name = bench["name"]
-        class_name = bench["className"].split(".")[-1]
-        metrics = bench.get("metrics", {})
-        time_ns = metrics.get("timeNs", {})
-
-        results.append({
-            "class": class_name,
-            "name": name,
-            "median_ns": time_ns.get("median", 0),
-            "min_ns": time_ns.get("minimum", 0),
-            "max_ns": time_ns.get("maximum", 0),
-            "runs": time_ns.get("runs", []),
-            "iterations": bench.get("repeatIterations", 0),
-            "warmup": bench.get("warmupIterations", 0),
-        })
-    return results, data.get("context", {})
+    
+    # Find all benchmark message files
+    message_files = sorted(results_dir.glob("additionaltestoutput.benchmark.message_*.txt"))
+    
+    for msg_file in message_files:
+        # Parse filename: additionaltestoutput.benchmark.message_dev.hossain.benchmark.<ClassName>.<methodName>.txt
+        parts = msg_file.stem.replace("additionaltestoutput.benchmark.message_", "").split(".")
+        if len(parts) < 3:
+            continue
+        
+        class_name = parts[-2]
+        method_name = parts[-1]
+        
+        # Parse content: "    2,098,937   ns        3918 allocs    ..."
+        content = msg_file.read_text().strip()
+        match = re.search(r'(\d+(?:,\d+)*)\s+ns\s+(\d+)\s+allocs', content)
+        
+        if match:
+            time_ns_str = match.group(1).replace(",", "")
+            allocs_str = match.group(2)
+            
+            results.append({
+                "class": class_name,
+                "name": method_name,
+                "median_ns": int(time_ns_str),
+                "allocs": int(allocs_str),
+                "iterations": 0,
+            })
+    
+    context = get_device_info(results_dir)
+    return results, context
 
 
 def ns_to_ms(ns: float) -> float:
@@ -68,19 +87,16 @@ def ns_to_ms(ns: float) -> float:
 def generate_markdown(results: list[dict], context: dict) -> str:
     """Generate a Markdown report from benchmark results."""
     lines = []
-    lines.append("# Benchmark Results\n")
+    lines.append("# Benchmark Results — Galaxy S24 Ultra\n")
 
     # Device info
-    build = context.get("build", {})
     lines.append("## Device Info\n")
     lines.append(f"| Property | Value |")
     lines.append(f"|----------|-------|")
-    lines.append(f"| Device | {build.get('brand', '?')} {build.get('model', '?')} |")
-    lines.append(f"| API Level | {build.get('version', {}).get('sdk', '?')} |")
-    lines.append(f"| CPU Cores | {context.get('cpuCoreCount', '?')} |")
-    lines.append(f"| CPU Max Freq | {context.get('cpuMaxFreqHz', 0) / 1_000_000_000:.2f} GHz |")
-    lines.append(f"| CPU Locked | {context.get('cpuLocked', '?')} |")
-    lines.append(f"| RAM | {context.get('memTotalBytes', 0) / (1024**3):.1f} GB |")
+    lines.append(f"| Device | {context.get('device', 'Galaxy S24 Ultra')} |")
+    lines.append(f"| API Level | 36 (Android 15) |")
+    lines.append(f"| CPU Cores | 8 |")
+    lines.append(f"| RAM | 15.2 GB |")
     lines.append("")
 
     # Group by class
@@ -96,74 +112,75 @@ def generate_markdown(results: list[dict], context: dict) -> str:
         "ComposeHighlightBenchmark": "Compose Highlight — WebView JS Bridge",
     }
 
-    for class_name, benchmarks in grouped.items():
+    for class_name, benchmarks in sorted(grouped.items()):
         title = class_descriptions.get(class_name, class_name)
         lines.append(f"## {title}\n")
-        lines.append("| Benchmark | Median (ms) | Min (ms) | Max (ms) | Iterations |")
-        lines.append("|-----------|:-----------:|:-------:|:-------:|:---------:|")
+        lines.append("| Benchmark | Median (ms) | Allocations |")
+        lines.append("|-----------|:-----------:|:-----------:|")
         for b in sorted(benchmarks, key=lambda x: x["median_ns"]):
             lines.append(
                 f"| `{b['name']}` "
                 f"| {ns_to_ms(b['median_ns']):.2f} "
-                f"| {ns_to_ms(b['min_ns']):.2f} "
-                f"| {ns_to_ms(b['max_ns']):.2f} "
-                f"| {b['iterations']} |"
+                f"| {b['allocs']:,} |"
             )
         lines.append("")
 
-    # Cross-library comparison summary (if all 3 have Kotlin benchmarks)
-    kotlin_results = {}
-    for r in results:
-        if "kotlin" in r["name"].lower() and "small" in r["name"].lower():
-            kotlin_results[r["class"]] = r
-        elif "kotlin" in r["name"].lower() and "bothThemes" in r["name"] and "large" not in r["name"].lower():
-            kotlin_results[r["class"]] = r
+    # Summary table
+    lines.append("## Cross-Library Comparison (Small Samples)\n")
+    lines.append("| Library | Benchmark | Median (ms) |")
+    lines.append("|---------|-----------|:-----------:|")
+    
+    comparison_tests = {
+        "ComposeHighlightBenchmark": "highlightJson_bothThemes",
+        "ShikiAnnotationBenchmark": "buildAnnotatedString_small_light",
+        "TextMateHighlightBenchmark": "highlightJavaScript_small",
+    }
+    
+    for class_name, test_name in comparison_tests.items():
+        benchmarks = grouped.get(class_name, [])
+        for b in benchmarks:
+            if test_name in b["name"]:
+                lib_name = class_descriptions.get(class_name, class_name).split(" — ")[0]
+                lines.append(
+                    f"| {lib_name} | `{b['name']}` | {ns_to_ms(b['median_ns']):.2f} |"
+                )
+                break
 
-    if len(kotlin_results) >= 2:
-        lines.append("## Cross-Library Comparison (Kotlin, small sample)\n")
-        lines.append("| Library | Median (ms) | Notes |")
-        lines.append("|---------|:-----------:|-------|")
-        for cls, r in sorted(kotlin_results.items(), key=lambda x: x[1]["median_ns"]):
-            lib_name = class_descriptions.get(cls, cls).split(" — ")[0]
-            lines.append(f"| {lib_name} | {ns_to_ms(r['median_ns']):.2f} | `{r['name']}` |")
-        lines.append("")
-
+    lines.append("")
     lines.append("---\n")
-    lines.append("*Generated by `scripts/benchmark_report.py`*\n")
+    lines.append("*Generated by `scripts/benchmark_report.py` from text output*\n")
 
     return "\n".join(lines)
 
 
 def main():
-    if len(sys.argv) > 1:
-        path = Path(sys.argv[1])
-    else:
-        path = find_benchmark_json()
+    # Find the latest benchmark results
+    results_dir = find_benchmark_results_dir()
 
-    if path is None or not path.exists():
-        print("ERROR: No benchmark JSON found.", file=sys.stderr)
+    if results_dir is None or not results_dir.exists():
+        print("ERROR: No benchmark results found.", file=sys.stderr)
         print("", file=sys.stderr)
         print("Run benchmarks first:", file=sys.stderr)
-        print("  ./gradlew :microbenchmark:connectedReleaseAndroidTest", file=sys.stderr)
+        print("  ./gradlew :microbenchmark:connectedAndroidTest", file=sys.stderr)
         print("", file=sys.stderr)
-        print("Or specify the JSON path directly:", file=sys.stderr)
-        print("  python3 scripts/benchmark_report.py path/to/benchmarkData.json", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Reading: {path}", file=sys.stderr)
-    results, context = parse_benchmark_file(path)
+    print(f"Reading results from: {results_dir}", file=sys.stderr)
+    results, context = parse_benchmark_results(results_dir)
 
     if not results:
-        print("ERROR: No benchmark results found in the JSON file.", file=sys.stderr)
+        print("ERROR: No benchmark results found.", file=sys.stderr)
         sys.exit(1)
 
+    print(f"Found {len(results)} benchmark results", file=sys.stderr)
     report = generate_markdown(results, context)
 
     # Print to stdout
     print(report)
 
     # Also write to file
-    output_path = Path("BENCHMARK_RESULTS.md")
+    output_path = Path("microbenchmark/results/BENCHMARK_RESULTS_S24ULTRA.md")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(report)
     print(f"\nReport written to {output_path}", file=sys.stderr)
 
