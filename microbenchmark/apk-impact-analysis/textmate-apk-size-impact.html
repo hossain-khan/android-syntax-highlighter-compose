@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK Size Impact: kotlin-textmate-compose (2-Phase)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        :root {
+            --bg: #f8f9fa; --bg-card: #ffffff; --text: #212529; --text-muted: #6c757d;
+            --text-heading: #495057; --border: #e9ecef; --bg-metric: #f8f9fa; --bg-th: #f8f9fa;
+            --positive: #dc3545; --negative: #198754; --shadow: rgba(0,0,0,0.1);
+            --toggle-bg: #e9ecef; --toggle-knob: #ffffff;
+            --tab-active: #0d6efd; --tab-inactive: #6c757d;
+            --callout-bg: #e8f4fd; --callout-border: #0d6efd;
+        }
+        [data-theme="dark"] {
+            --bg: #1a1a2e; --bg-card: #16213e; --text: #e4e4e4; --text-muted: #a0a0a0;
+            --text-heading: #c8c8c8; --border: #2a2a4a; --bg-metric: #1a1a2e; --bg-th: #1a1a2e;
+            --positive: #ff6b6b; --negative: #51cf66; --shadow: rgba(0,0,0,0.3);
+            --toggle-bg: #2a2a4a; --toggle-knob: #e4e4e4;
+            --tab-active: #6ea8fe; --tab-inactive: #a0a0a0;
+            --callout-bg: #1a2a3e; --callout-border: #6ea8fe;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 2rem; transition: background 0.3s, color 0.3s; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
+        .header-text h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .subtitle { color: var(--text-muted); }
+        .theme-toggle { position: relative; width: 56px; height: 28px; background: var(--toggle-bg); border-radius: 14px; cursor: pointer; transition: background 0.3s; border: none; flex-shrink: 0; }
+        .theme-toggle .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: var(--toggle-knob); border-radius: 50%; transition: transform 0.3s; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        [data-theme="dark"] .theme-toggle .knob { transform: translateX(28px); }
+        .theme-toggle .icon { font-size: 12px; }
+        .card { background: var(--bg-card); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px var(--shadow); transition: background 0.3s, box-shadow 0.3s; }
+        .card h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-heading); }
+        .callout { background: var(--callout-bg); border-left: 4px solid var(--callout-border); padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.5; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .metric { text-align: center; padding: 1rem; background: var(--bg-metric); border-radius: 8px; transition: background 0.3s; }
+        .metric .value { font-size: 1.8rem; font-weight: 700; color: var(--positive); }
+        .metric .label { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .metric.highlight .label { font-weight: 600; }
+        .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem; }
+        .tab { padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 500; color: var(--tab-inactive); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; font-size: 0.95rem; }
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--tab-active); border-bottom-color: var(--tab-active); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-badge { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px; margin-left: 0.5rem; font-weight: 700; background: var(--tab-active); color: white; vertical-align: middle; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.6rem 1rem; text-align: right; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-th); font-weight: 600; color: var(--text-heading); }
+        td:first-child, th:first-child { text-align: left; }
+        .diff-positive { color: var(--positive); font-weight: 600; }
+        .diff-negative { color: var(--negative); font-weight: 600; }
+        .chart-container { position: relative; height: 300px; margin: 1rem 0; }
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .chart-row h3 { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        @media (max-width: 768px) { .chart-row { grid-template-columns: 1fr; } }
+        .footer { text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 2rem; }
+        .footer a { color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-text">
+                <h1>APK Size Impact Report</h1>
+                <p class="subtitle">Library: <strong>io.github.ivan-magda:kotlin-textmate-compose:0.1.0</strong> &mdash; 2-Phase Analysis</p>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+                <div class="knob"><span class="icon" id="themeIcon">&#9788;</span></div>
+            </button>
+        </div>
+
+        <div class="callout">
+            <strong>Methodology:</strong> This report uses a 2-phase comparison to isolate the library's true incremental cost.
+            Phase 1 measures what Compose foundation, animations, and Gson add to a minimal app.
+            Phase 2 measures what kotlin-textmate-compose adds on top of that (Joni regex engine + grammar/theme assets + library code).
+            The &ldquo;Full Diff&rdquo; tab shows the naive end-to-end comparison for reference.
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('phase2')">Phase 2: Library Cost<span class="tab-badge">TRUE COST</span></button>
+            <button class="tab" onclick="switchTab('phase1')">Phase 1: Foundation Cost</button>
+            <button class="tab" onclick="switchTab('full')">Full Diff (Legacy)</button>
+        </div>
+
+        <!-- Phase 2 -->
+        <div id="tab-phase2" class="tab-content active">
+            <div class="card">
+                <h2>True Library Impact (with-library vs enriched baseline)</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">Compared against a realistic app that already uses LazyColumn, Canvas, animations, and Gson.</p>
+                <div class="summary-grid">
+                    <div class="metric highlight"><div class="value">+1.6 MB</div><div class="label">Release APK Delta</div></div>
+                    <div class="metric highlight"><div class="value">+1.7 MB</div><div class="label">Debug APK Delta</div></div>
+                    <div class="metric"><div class="value">+3,605</div><div class="label">Methods (release)</div></div>
+                    <div class="metric"><div class="value">+429</div><div class="label">Classes (release)</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Phase 2 Release Breakdown</h2>
+                <table>
+                    <thead><tr><th>Category</th><th>Enriched Baseline</th><th>With Library</th><th>Delta</th></tr></thead>
+                    <tbody>
+                        <tr><td>dex</td><td>832.3 KB</td><td>1.1 MB</td><td class="diff-positive">+249.6 KB</td></tr>
+                        <tr><td>arsc</td><td>70.2 KB</td><td>70.2 KB</td><td>0B</td></tr>
+                        <tr><td>manifest</td><td>1.7 KB</td><td>1.7 KB</td><td>0B</td></tr>
+                        <tr><td>res</td><td>36.4 KB</td><td>36.4 KB</td><td class="diff-negative">-4B</td></tr>
+                        <tr><td>native</td><td>103.9 KB</td><td>84.6 KB</td><td class="diff-negative">-19.3 KB</td></tr>
+                        <tr><td>asset</td><td>3.9 KB</td><td>37.8 KB</td><td class="diff-positive">+33.9 KB</td></tr>
+                        <tr><td>other</td><td>45.1 KB</td><td>1.4 MB</td><td class="diff-positive">+1.3 MB</td></tr>
+                        <tr style="font-weight: 700; border-top: 2px solid var(--border);"><td>TOTAL</td><td>1.1 MB</td><td>2.6 MB</td><td class="diff-positive">+1.6 MB</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Phase 1 -->
+        <div id="tab-phase1" class="tab-content">
+            <div class="card">
+                <h2>Foundation Cost (enriched baseline vs minimal baseline)</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">What Compose foundation, Canvas graphics, animations, and Gson add to a minimal app.</p>
+                <div class="summary-grid">
+                    <div class="metric"><div class="value">+162.9 KB</div><div class="label">Release APK Delta</div></div>
+                    <div class="metric"><div class="value">+133.7 KB</div><div class="label">Debug APK Delta</div></div>
+                    <div class="metric"><div class="value">+2,019</div><div class="label">Methods (release)</div></div>
+                    <div class="metric"><div class="value">+455</div><div class="label">Classes (release)</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Phase 1 Release Breakdown</h2>
+                <table>
+                    <thead><tr><th>Category</th><th>Minimal Baseline</th><th>Enriched Baseline</th><th>Delta</th></tr></thead>
+                    <tbody>
+                        <tr><td>dex</td><td>676.1 KB</td><td>832.3 KB</td><td class="diff-positive">+156.3 KB</td></tr>
+                        <tr><td>arsc</td><td>70.2 KB</td><td>70.2 KB</td><td>0B</td></tr>
+                        <tr><td>manifest</td><td>1.7 KB</td><td>1.7 KB</td><td>0B</td></tr>
+                        <tr><td>res</td><td>36.4 KB</td><td>36.4 KB</td><td>0B</td></tr>
+                        <tr><td>native</td><td>98.1 KB</td><td>103.9 KB</td><td class="diff-positive">+5.8 KB</td></tr>
+                        <tr><td>asset</td><td>3.1 KB</td><td>3.9 KB</td><td class="diff-positive">+854B</td></tr>
+                        <tr><td>other</td><td>45.1 KB</td><td>45.1 KB</td><td class="diff-negative">-1B</td></tr>
+                        <tr style="font-weight: 700; border-top: 2px solid var(--border);"><td>TOTAL</td><td>930.7 KB</td><td>1.1 MB</td><td class="diff-positive">+162.9 KB</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Full Diff -->
+        <div id="tab-full" class="tab-content">
+            <div class="card">
+                <h2>Full Comparison (with-library vs minimal baseline)</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">End-to-end comparison for reference. This overstates the library's cost because R8 strips shared dependencies from the minimal baseline.</p>
+                <div class="summary-grid">
+                    <div class="metric"><div class="value">+1.7 MB</div><div class="label">Release APK (compressed)</div></div>
+                    <div class="metric"><div class="value">+1.8 MB</div><div class="label">Debug APK (compressed)</div></div>
+                    <div class="metric"><div class="value">+5,624</div><div class="label">Methods added (release)</div></div>
+                    <div class="metric"><div class="value">+884</div><div class="label">Classes added (release)</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Release APK (with R8 minification)</h2>
+                <table>
+                    <thead><tr><th>Category</th><th>Baseline</th><th>With Library</th><th>Delta</th></tr></thead>
+                    <tbody>
+                        <tr><td>dex</td><td>676.1 KB</td><td>1.1 MB</td><td class="diff-positive">+405.8 KB</td></tr>
+                        <tr><td>arsc</td><td>70.2 KB</td><td>70.2 KB</td><td>0B</td></tr>
+                        <tr><td>manifest</td><td>1.7 KB</td><td>1.7 KB</td><td>0B</td></tr>
+                        <tr><td>res</td><td>36.4 KB</td><td>36.4 KB</td><td class="diff-negative">-4B</td></tr>
+                        <tr><td>native</td><td>98.1 KB</td><td>84.6 KB</td><td class="diff-negative">-13.5 KB</td></tr>
+                        <tr><td>asset</td><td>3.1 KB</td><td>37.8 KB</td><td class="diff-positive">+34.7 KB</td></tr>
+                        <tr><td>other</td><td>45.1 KB</td><td>1.4 MB</td><td class="diff-positive">+1.3 MB</td></tr>
+                        <tr style="font-weight: 700; border-top: 2px solid var(--border);"><td>TOTAL</td><td>930.7 KB</td><td>2.6 MB</td><td class="diff-positive">+1.7 MB</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card">
+                <h2>Debug APK (no minification)</h2>
+                <table>
+                    <thead><tr><th>Category</th><th>Baseline</th><th>With Library</th><th>Delta</th></tr></thead>
+                    <tbody>
+                        <tr><td>dex</td><td>10.7 MB</td><td>11.2 MB</td><td class="diff-positive">+469.7 KB</td></tr>
+                        <tr><td>arsc</td><td>467.5 KB</td><td>467.5 KB</td><td>0B</td></tr>
+                        <tr><td>manifest</td><td>1.8 KB</td><td>1.8 KB</td><td class="diff-negative">-1B</td></tr>
+                        <tr><td>res</td><td>56.6 KB</td><td>56.6 KB</td><td class="diff-negative">-4B</td></tr>
+                        <tr><td>native</td><td>100.3 KB</td><td>88.9 KB</td><td class="diff-negative">-11.4 KB</td></tr>
+                        <tr><td>asset</td><td>0B</td><td>42 KB</td><td class="diff-positive">+42 KB</td></tr>
+                        <tr><td>other</td><td>45.8 KB</td><td>1.4 MB</td><td class="diff-positive">+1.3 MB</td></tr>
+                        <tr style="font-weight: 700; border-top: 2px solid var(--border);"><td>TOTAL</td><td>11.4 MB</td><td>13.2 MB</td><td class="diff-positive">+1.8 MB</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card">
+                <h2>Charts: Size Breakdown (Compressed)</h2>
+                <div class="chart-row">
+                    <div><h3>Release Build</h3><div class="chart-container"><canvas id="releaseChart"></canvas></div></div>
+                    <div><h3>Debug Build</h3><div class="chart-container"><canvas id="debugChart"></canvas></div></div>
+                </div>
+            </div>
+        </div>
+
+        <p class="footer">Generated using <a href="https://github.com/JakeWharton/diffuse">diffuse</a> &bull; 2-Phase methodology: minimal &rarr; enriched (Gson+foundation) &rarr; with kotlin-textmate</p>
+    </div>
+
+    <script>
+        function getTheme() { return localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+        function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); document.getElementById('themeIcon').innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;'; updateCharts(theme); }
+        function toggleTheme() { const c = document.documentElement.getAttribute('data-theme'); applyTheme(c === 'dark' ? 'light' : 'dark'); }
+        function switchTab(tabId) { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.getElementById('tab-' + tabId).classList.add('active'); event.currentTarget.classList.add('active'); }
+        const categories = ['dex', 'arsc', 'manifest', 'res', 'native', 'asset', 'other'];
+        let releaseChart, debugChart;
+        function chartColors(theme) { return theme === 'dark' ? { baseline: '#5b9bd5', withLib: '#ff6b6b', grid: 'rgba(255,255,255,0.1)', text: '#a0a0a0' } : { baseline: '#4e79a7', withLib: '#e15759', grid: 'rgba(0,0,0,0.1)', text: '#666666' }; }
+        function createCharts(theme) {
+            const colors = chartColors(theme);
+            const opts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: colors.text } } }, scales: { y: { title: { display: true, text: 'Size (KB)', color: colors.text }, grid: { color: colors.grid }, ticks: { color: colors.text } }, x: { grid: { color: colors.grid }, ticks: { color: colors.text } } } };
+            releaseChart = new Chart(document.getElementById('releaseChart'), { type: 'bar', data: { labels: categories, datasets: [{ label: 'Baseline', data: [676.1, 70.2, 1.7, 36.4, 98.1, 3.1, 45.1], backgroundColor: colors.baseline }, { label: 'With Library', data: [1126.4, 70.2, 1.7, 36.4, 84.6, 37.8, 1433.6], backgroundColor: colors.withLib }] }, options: opts });
+            debugChart = new Chart(document.getElementById('debugChart'), { type: 'bar', data: { labels: categories, datasets: [{ label: 'Baseline', data: [10956.8, 467.5, 1.8, 56.6, 100.3, 0.0, 45.8], backgroundColor: colors.baseline }, { label: 'With Library', data: [11468.8, 467.5, 1.8, 56.6, 88.9, 42, 1433.6], backgroundColor: colors.withLib }] }, options: opts });
+        }
+        function updateCharts(theme) { if (!releaseChart || !debugChart) return; const colors = chartColors(theme); [releaseChart, debugChart].forEach(chart => { chart.data.datasets[0].backgroundColor = colors.baseline; chart.data.datasets[1].backgroundColor = colors.withLib; chart.options.plugins.legend.labels.color = colors.text; chart.options.scales.y.title.color = colors.text; chart.options.scales.y.grid.color = colors.grid; chart.options.scales.y.ticks.color = colors.text; chart.options.scales.x.grid.color = colors.grid; chart.options.scales.x.ticks.color = colors.text; chart.update(); }); }
+        const initialTheme = getTheme(); applyTheme(initialTheme); createCharts(initialTheme);
+    </script>
+</body>
+</html>
