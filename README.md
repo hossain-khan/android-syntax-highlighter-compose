@@ -45,27 +45,6 @@ Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/s
 
 ## Quick Comparison
 
-```mermaid
-graph TB
-    subgraph Shiki["☁️ Shiki (Server-Driven)"]
-        S1["Network request<br/>Zero device code"]
-        S2["✓ 100+ themes<br/>✓ Any language on server"]
-        S3["APK cost: ~0 KB<br/>(uses WebView)"]
-    end
-    
-    subgraph TextMate["📴 TextMate (On-Device)"]
-        T1["Pure Kotlin<br/>Joni regex engine"]
-        T2["✓ 600+ TextMate grammars<br/>✓ Full Compose control"]
-        T3["APK cost: +1.6 MB<br/>(encoding tables)"]
-    end
-    
-    subgraph HighlightJS["🌐 Highlight.js (On-Device)"]
-        H1["WebView + JS<br/>Fastest setup"]
-        H2["✓ 190+ languages bundled<br/>✓ No grammar files"]
-        H3["APK cost: +628 KB<br/>(smallest!)"]
-    end
-```
-
 | Aspect | Shiki | TextMate | Compose Highlight |
 |--------|-------|----------|-------------------|
 | **APK Impact** | ~0 KB | **+1.6 MB** | ✅ **+628 KB** |
@@ -75,7 +54,7 @@ graph TB
 | **Compose-native** | ❌ | ✅ | ✅ |
 | **Setup** | 1 dependency | Bring grammars | 1 dependency |
 
-**→ Full details with benchmarks:** [APK Size Impact Analysis](microbenchmark/apk-impact-analysis/)
+**→ Full details & benchmarks:** [APK Size Impact Analysis](microbenchmark/apk-impact-analysis/)
 
 ## Tech Stack
 
