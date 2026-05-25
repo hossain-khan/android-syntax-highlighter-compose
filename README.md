@@ -47,7 +47,7 @@ Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/s
 
 | Aspect | Shiki | TextMate | Compose Highlight |
 |--------|-------|----------|-------------------|
-| **APK Impact** | ~0 KB | **+1.6 MB** | ✅ **+628 KB** |
+| **APK Impact** | ~20 KB | **+1.6 MB** | ✅ **+628 KB** |
 | **Rendering** | Server | Pure Compose | WebView |
 | **Offline** | ❌ Network required | ✅ Fully offline | ✅ Fully offline |
 | **Languages** | Unlimited* | 600+ | 190+ (bundled) |
