@@ -22,7 +22,7 @@ junitVersion = "1.3.0"
 kotlin = "2.3.21"
 # The KSP (Kotlin Symbol Processing) plugin version is managed separately in this template.
 # When upgrading Kotlin or KSP, verify that the selected KSP release is compatible with the configured Kotlin version.
-ksp = "2.3.8"
+ksp = "2.3.9"
 
 # Kotlin linter with built-in formatter
 # https://github.com/jeremymailen/kotlinter-gradle
@@ -38,7 +38,7 @@ androidxTestRunner = "1.6.2"
 benchmarkJunit4 = "1.4.1"
 
 # https://github.com/hossain-khan/android-compose-highlight
-composeHighlight = "0.22.0"
+composeHighlight = "0.24.0"
 
 # https://github.com/ivan-magda/kotlin-textmate
 kotlinTextmate = "0.1.0"
