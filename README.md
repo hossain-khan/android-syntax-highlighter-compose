@@ -1,4 +1,4 @@
-[![](https://androidweekly.net/issues/issue-725/badge)](https://androidweekly.net/issues/issue-725)
+[![Android CI](https://github.com/hossain-khan/android-syntax-highlighter-compose/actions/workflows/android.yml/badge.svg)](https://github.com/hossain-khan/android-syntax-highlighter-compose/actions/workflows/android.yml) [![](https://androidweekly.net/issues/issue-725/badge)](https://androidweekly.net/issues/issue-725)
 
 # Android Syntax Highlighter (Compose)
 
