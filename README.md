@@ -53,7 +53,7 @@ Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/s
 | **Languages** | Unlimited* | ✅ **250+*** (any VS Code grammar) | 190+ (bundled) |
 | **Compose-native** | ❌ | ✅ | ✅ |
 | **Setup** | Add 1 lib + server URL | Add 1 lib + bring grammars | Add 1 lib |
-| **Performance** (avg)¹ | **n/a** | ~8.4ms | ~6.4ms |
+| **Performance** (avg)¹ | **n/a** | ✅ ~8.4ms | ~6.4ms (warm) |
 
 * TextMate can load any TextMate/VS Code grammar format; 250+ are available in the VS Code ecosystem.
 
