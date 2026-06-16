@@ -1,6 +1,8 @@
 package dev.hossain.syntaxhighlight.circuit.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -142,6 +144,7 @@ private data class HighlightApproach(
     val subtitle: String,
     val iconRes: Int,
     val event: HomeScreen.Event,
+    val version: String? = null,
 )
 
 // Constant list — hoisted out of the composable to avoid allocation on every recomposition.
@@ -155,6 +158,7 @@ private val approaches =
                     "the app builds an AnnotatedString and renders it natively.",
             iconRes = R.drawable.cloud_24dp,
             event = HomeScreen.Event.OpenShikiHighlight,
+            version = "sdk-1.0.5",
         ),
         HighlightApproach(
             title = "Kotlin TextMate",
@@ -163,6 +167,7 @@ private val approaches =
                     "No network required — grammars and themes are bundled in the app assets.",
             iconRes = R.drawable.cloud_off_24dp,
             event = HomeScreen.Event.OpenTextMateHighlight,
+            version = "0.2.0",
         ),
         HighlightApproach(
             title = "Compose Highlight",
@@ -171,6 +176,7 @@ private val approaches =
                     "190+ languages with no grammar files to maintain — just drop in the library.",
             iconRes = R.drawable.cloud_off_24dp,
             event = HomeScreen.Event.OpenComposeHighlight,
+            version = "0.31.0",
         ),
         HighlightApproach(
             title = "Compare All Highlights",
@@ -257,6 +263,23 @@ private fun ApproachCard(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
+                if (approach.version != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier =
+                            Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                ).padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = approach.version,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
