@@ -1,7 +1,7 @@
 [versions]
 # Android SDK versions
 # https://developer.android.com/about/versions
-compileSdk = "36"
+compileSdk = "37"
 targetSdk = "36"
 minSdk = "28"
 
@@ -38,10 +38,10 @@ androidxTestRunner = "1.6.2"
 benchmarkJunit4 = "1.4.1"
 
 # https://github.com/hossain-khan/android-compose-highlight
-composeHighlight = "0.24.0"
+composeHighlight = "0.31.0"
 
 # https://github.com/ivan-magda/kotlin-textmate
-kotlinTextmate = "0.1.0"
+kotlinTextmate = "0.2.0"
 
 # https://github.com/hossain-khan/shiki-token-service/blob/main/sdk/README.md
 shikiSdk = "sdk-1.0.5"

@@ -1,6 +1,8 @@
 package dev.hossain.syntaxhighlight.circuit.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,6 +39,7 @@ import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import com.slack.circuitx.overlays.BottomSheetOverlay
+import dev.hossain.syntaxhighlight.BuildConfig
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.circuit.comparison.ComparisonScreen
 import dev.hossain.syntaxhighlight.circuit.composehighlight.ComposeHighlightScreen
@@ -142,6 +145,7 @@ private data class HighlightApproach(
     val subtitle: String,
     val iconRes: Int,
     val event: HomeScreen.Event,
+    val version: String? = null,
 )
 
 // Constant list — hoisted out of the composable to avoid allocation on every recomposition.
@@ -155,6 +159,7 @@ private val approaches =
                     "the app builds an AnnotatedString and renders it natively.",
             iconRes = R.drawable.cloud_24dp,
             event = HomeScreen.Event.OpenShikiHighlight,
+            version = BuildConfig.SHIKI_SDK_VERSION,
         ),
         HighlightApproach(
             title = "Kotlin TextMate",
@@ -163,6 +168,7 @@ private val approaches =
                     "No network required — grammars and themes are bundled in the app assets.",
             iconRes = R.drawable.cloud_off_24dp,
             event = HomeScreen.Event.OpenTextMateHighlight,
+            version = BuildConfig.KOTLIN_TEXTMATE_VERSION,
         ),
         HighlightApproach(
             title = "Compose Highlight",
@@ -171,6 +177,7 @@ private val approaches =
                     "190+ languages with no grammar files to maintain — just drop in the library.",
             iconRes = R.drawable.cloud_off_24dp,
             event = HomeScreen.Event.OpenComposeHighlight,
+            version = BuildConfig.COMPOSE_HIGHLIGHT_VERSION,
         ),
         HighlightApproach(
             title = "Compare All Highlights",
@@ -257,6 +264,23 @@ private fun ApproachCard(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
+                if (approach.version != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier =
+                            Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                ).padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = approach.version,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
