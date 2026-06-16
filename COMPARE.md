@@ -14,15 +14,15 @@ Code is sent in a single network request to the `/highlight/dual` endpoint, whic
 and a light theme. The client builds an `AnnotatedString` from those tokens and renders it with
 a monospace font — no grammar files or WebView needed on the device.
 
-**kotlin-textmate** (`io.github.ivan-magda:kotlin-textmate-compose:0.1.0`)  
+**kotlin-textmate** (`io.github.ivan-magda:kotlin-textmate-compose:0.2.0`)  
 Ports Microsoft's vscode-textmate engine to Kotlin/JVM. Loads `.tmLanguage.json` grammar files
 and VS Code JSON theme files from assets, then tokenizes code line-by-line using the Joni
 (Java Oniguruma) regex engine — entirely in-process, no WebView involved. Output is an
 `AnnotatedString` built directly from token scopes matched against theme rules.
 
-**compose-highlight** (`dev.hossain:compose-highlight:0.24.0`)  
+**compose-highlight** (`dev.hossain:compose-highlight:0.31.0`)  
 Runs [Highlight.js](https://highlightjs.org/) inside a single hidden WebView. Code is sent
-over a JS bridge, tokenized in JavaScript, the resulting HTML is parsed via jsoup, and CSS
+over a JS bridge, tokenized in JavaScript, the resulting HTML is parsed via a custom lightweight HTML parser, and CSS
 theme selectors are mapped to `SpanStyle`s to produce an `AnnotatedString`. All WebView
 operations are suspend functions behind a `Mutex`.
 
@@ -50,9 +50,9 @@ operations are suspend functions behind a `Mutex`.
 | **Line numbers** | Not built-in | Not built-in | `showLineNumbers = true` on `SyntaxHighlightedCode` |
 | **Shared engine** | `ShikiClient` (stateless HTTP) | No provider concept; one `Grammar` per use | `HighlightThemeProvider` shares one WebView across the subtree |
 | **Thread-safety** | Inherently safe (stateless HTTP) | `Grammar` is **not** thread-safe | `HighlightEngine` is safe via `Mutex` |
-| **Timing metrics exposed** | `requestDurationMs`, `annotationDurationMs` | `measureTimedValue` wraps `CodeHighlighter.highlight()` | `HighlightTimings` (`jsBridge`, `jsonUnescape`, `htmlParse`, `treeWalk`, `themeParse`, `total`) |
+| **Timing metrics exposed** | `requestDurationMs`, `annotationDurationMs` | `measureTimedValue` wraps `CodeHighlighter.highlight()` | `HighlightTimings` (`jsBridge`, `jsonUnescape`, `htmlParse`, `themeParse`, `total`) |
 | **Benchmarks published** | `buildAnnotatedString` only (AndroidX Microbenchmark; network RTT excluded) | Yes (AndroidX Microbenchmark, ms/snippet) | Yes (AndroidX Microbenchmark, ms/snippet) |
-| **Current version (this app)** | `sdk-1.0.5` | `0.1.0` ✓ latest | `0.19.0` ✓ latest |
+| **Current version (this app)** | `sdk-1.0.5` | `0.2.0` ✓ latest | `0.31.0` ✓ latest |
 
 ---
 

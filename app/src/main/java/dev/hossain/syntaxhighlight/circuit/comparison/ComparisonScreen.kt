@@ -724,7 +724,6 @@ private fun ComposeHighlightInfoCard(
                 InfoRow(label = "🌐  JS bridge", value = timings.jsBridge.toDisplayString())
                 InfoRow(label = "📝  JSON unescape", value = timings.jsonUnescape.toDisplayString())
                 InfoRow(label = "🔍  HTML parse", value = timings.htmlParse.toDisplayString())
-                InfoRow(label = "🌳  Tree walk", value = timings.treeWalk.toDisplayString())
                 if (timings.themeParse > Duration.ZERO) {
                     InfoRow(label = "🎨  Theme parse", value = timings.themeParse.toDisplayString())
                 } else {

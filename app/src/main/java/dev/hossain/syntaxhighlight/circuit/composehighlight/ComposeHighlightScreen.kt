@@ -120,7 +120,7 @@ enum class ComposeHighlightThemePair(
  *    time and would re-highlight on every toggle.
  * 2. **Per-stage timing metrics** — the screen displays a breakdown of
  *    [dev.hossain.highlight.engine.HighlightTimings] fields (`jsBridge`, `jsonUnescape`,
- *    `htmlParse`, `treeWalk`, `themeParse`, `total`) sourced from `themedResult?.timings`.
+ *    `htmlParse`, `themeParse`, `total`) sourced from `themedResult?.timings`.
  *    `SyntaxHighlightedCode` does not expose internal timing data to callers.
  * 3. **Custom layout control** — the screen combines language + theme dropdowns, a scrollable
  *    code block, and the metrics row in a single `Column`. Writing the `Text` directly avoids
@@ -296,8 +296,8 @@ private fun ReadyContent(
     // SyntaxHighlightedCode composable for three reasons:
     //  1. A single JS call produces both light and dark AnnotatedStrings so that theme
     //     toggling is instantaneous — no re-highlighting on each switch.
-    //  2. themedResult.timings exposes per-stage HighlightTimings (jsBridge, htmlParse,
-    //     treeWalk, etc.) for the metrics row; SyntaxHighlightedCode does not surface these.
+    //  2. themedResult.timings exposes per-stage HighlightTimings (jsBridge, jsonUnescape,
+    //     htmlParse, themeParse, total) for the metrics row; SyntaxHighlightedCode does not surface these.
     //  3. The screen owns its own layout (dropdowns + code block + metrics row) which
     //     is simpler to compose than overriding SyntaxHighlightedCode's built-in chrome.
     val themedResult by rememberHighlightedCodeBothThemes(
@@ -514,7 +514,6 @@ private fun ComposeHighlightMetricsRow(
                 TimingLabel("JS", timings.jsBridge)
                 TimingLabel("unescape", timings.jsonUnescape)
                 TimingLabel("HTML", timings.htmlParse)
-                TimingLabel("walk", timings.treeWalk)
                 if (timings.themeParse > Duration.ZERO) {
                     TimingLabel("theme", timings.themeParse)
                 } else {
