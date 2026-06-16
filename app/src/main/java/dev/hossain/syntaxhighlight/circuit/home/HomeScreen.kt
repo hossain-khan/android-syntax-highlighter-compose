@@ -39,6 +39,7 @@ import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import com.slack.circuitx.overlays.BottomSheetOverlay
+import dev.hossain.syntaxhighlight.BuildConfig
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.circuit.comparison.ComparisonScreen
 import dev.hossain.syntaxhighlight.circuit.composehighlight.ComposeHighlightScreen
@@ -158,7 +159,7 @@ private val approaches =
                     "the app builds an AnnotatedString and renders it natively.",
             iconRes = R.drawable.cloud_24dp,
             event = HomeScreen.Event.OpenShikiHighlight,
-            version = "sdk-1.0.5",
+            version = BuildConfig.SHIKI_SDK_VERSION,
         ),
         HighlightApproach(
             title = "Kotlin TextMate",
@@ -167,7 +168,7 @@ private val approaches =
                     "No network required — grammars and themes are bundled in the app assets.",
             iconRes = R.drawable.cloud_off_24dp,
             event = HomeScreen.Event.OpenTextMateHighlight,
-            version = "0.2.0",
+            version = BuildConfig.KOTLIN_TEXTMATE_VERSION,
         ),
         HighlightApproach(
             title = "Compose Highlight",
@@ -176,7 +177,7 @@ private val approaches =
                     "190+ languages with no grammar files to maintain — just drop in the library.",
             iconRes = R.drawable.cloud_off_24dp,
             event = HomeScreen.Event.OpenComposeHighlight,
-            version = "0.31.0",
+            version = BuildConfig.COMPOSE_HIGHLIGHT_VERSION,
         ),
         HighlightApproach(
             title = "Compare All Highlights",

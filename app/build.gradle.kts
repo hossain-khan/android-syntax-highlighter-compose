@@ -28,6 +28,10 @@ android {
         val apiKey = localProperties?.getProperty("SERVICE_API_KEY") ?: "MISSING-KEY"
         buildConfigField("String", "SERVICE_API_KEY", "\"$apiKey\"")
 
+        buildConfigField("String", "SHIKI_SDK_VERSION", "\"${libs.versions.shikiSdk.get()}\"")
+        buildConfigField("String", "KOTLIN_TEXTMATE_VERSION", "\"${libs.versions.kotlinTextmate.get()}\"")
+        buildConfigField("String", "COMPOSE_HIGHLIGHT_VERSION", "\"${libs.versions.composeHighlight.get()}\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
