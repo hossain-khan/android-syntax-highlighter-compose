@@ -45,7 +45,7 @@ Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/s
 
 ## Quick Comparison
 
-| Aspect | Shiki | TextMate | Compose Highlight |
+| Aspect | Shiki REST API | TextMate | Compose Highlight |
 |--------|-------|----------|-------------------|
 | **APK Impact** | ~20 KB | **+1.6 MB** | ✅ **+628 KB** |
 | **Grammer/Rendering** | <img src="microbenchmark/logos/api-interface.svg" height="18"> Server | <img src="microbenchmark/logos/jetpack-compose-logo.svg" height="18"> Pure Compose | <img src="microbenchmark/logos/chromium-logo.svg" height="18"> WebView |
