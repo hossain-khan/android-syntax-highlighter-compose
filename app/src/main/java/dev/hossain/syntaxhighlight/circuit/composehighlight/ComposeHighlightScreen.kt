@@ -62,8 +62,8 @@ import dev.hossain.highlight.engine.HighlightTimings
 import dev.hossain.highlight.ui.rememberAtomOneDarkTheme
 import dev.hossain.highlight.ui.rememberAtomOneLightTheme
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
+import dev.hossain.highlight.ui.rememberTomorrowLightTheme
 import dev.hossain.highlight.ui.rememberTomorrowNightTheme
-import dev.hossain.highlight.ui.rememberTomorrowTheme
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.data.samples.CodeSample
 import dev.hossain.syntaxhighlight.data.samples.CodeSamples
@@ -280,7 +280,7 @@ private fun ReadyContent(
     state: ComposeHighlightScreen.State.Ready,
     innerPadding: PaddingValues,
 ) {
-    val tomorrowLight = rememberTomorrowTheme()
+    val tomorrowLight = rememberTomorrowLightTheme()
     val tomorrowNight = rememberTomorrowNightTheme()
     val atomOneLight = rememberAtomOneLightTheme()
     val atomOneDark = rememberAtomOneDarkTheme()

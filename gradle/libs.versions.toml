@@ -7,12 +7,12 @@ minSdk = "28"
 
 activityCompose = "1.13.0"
 # https://developer.android.com/build/releases/gradle-plugin
-# AGP 9.1 requires Gradle 9.3.1 or higher
-agp = "9.2.1"
+# AGP 9.3 requires Gradle 9.5.0 or higher
+agp = "9.3.0"
 
-circuit = "0.33.1"
-composeBom = "2026.05.00"
-coreKtx = "1.18.0"
+circuit = "0.36.1"
+composeBom = "2026.08.00"
+coreKtx = "1.19.0"
 espressoCore = "3.7.0"
 googleFonts = "1.11.1"
 junit = "4.13.2"
@@ -27,18 +27,18 @@ ksp = "2.3.9"
 # Kotlin linter with built-in formatter
 # https://github.com/jeremymailen/kotlinter-gradle
 # https://github.com/pinterest/ktlint
-kotlinter = "5.5.0"
-lifecycleRuntimeKtx = "2.10.0"
-metro = "1.1.1"
-androidxWebkit = "1.16.0"
-androidxTestCore = "1.6.1"
-androidxTestRunner = "1.6.2"
+kotlinter = "5.7.0"
+lifecycleRuntimeKtx = "2.11.0"
+metro = "1.4.2"
+androidxWebkit = "1.17.0"
+androidxTestCore = "1.7.0"
+androidxTestRunner = "1.7.0"
 
 # https://developer.android.com/jetpack/androidx/releases/benchmark
 benchmarkJunit4 = "1.4.1"
 
 # https://github.com/hossain-khan/android-compose-highlight
-composeHighlight = "0.31.0"
+composeHighlight = "0.33.0"
 
 # https://github.com/ivan-magda/kotlin-textmate
 kotlinTextmate = "0.2.0"

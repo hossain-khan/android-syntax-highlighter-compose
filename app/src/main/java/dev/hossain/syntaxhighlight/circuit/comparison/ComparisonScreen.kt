@@ -61,8 +61,8 @@ import com.slack.circuit.runtime.presenter.Presenter
 import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.highlight.engine.HighlightTimings
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
+import dev.hossain.highlight.ui.rememberTomorrowLightTheme
 import dev.hossain.highlight.ui.rememberTomorrowNightTheme
-import dev.hossain.highlight.ui.rememberTomorrowTheme
 import dev.hossain.shiki.model.Theme
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.circuit.shiki.buildAnnotatedStringFromDualResponse
@@ -591,7 +591,7 @@ private fun ComposeHighlightApproachCard(
     isDark: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val lightTheme = rememberTomorrowTheme()
+    val lightTheme = rememberTomorrowLightTheme()
     val darkTheme = rememberTomorrowNightTheme()
 
     val themedResult by rememberHighlightedCodeBothThemes(

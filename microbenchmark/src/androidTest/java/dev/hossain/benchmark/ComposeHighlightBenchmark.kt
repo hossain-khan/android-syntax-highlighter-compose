@@ -50,8 +50,8 @@ class ComposeHighlightBenchmark {
         val latch = CountDownLatch(1)
         scenario.onActivity { activity ->
             engine = HighlightEngine(activity as Context)
-            lightTheme = HighlightTheme.tomorrow(activity)
-            darkTheme = HighlightTheme.tomorrowNight(activity)
+            lightTheme = HighlightTheme.tomorrow()
+            darkTheme = HighlightTheme.tomorrowNight()
             latch.countDown()
         }
         latch.await(10, TimeUnit.SECONDS)
