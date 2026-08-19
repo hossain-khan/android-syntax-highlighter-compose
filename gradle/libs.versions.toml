@@ -2,7 +2,7 @@
 # Android SDK versions
 # https://developer.android.com/about/versions
 compileSdk = "37"
-targetSdk = "36"
+targetSdk = "37"
 minSdk = "28"
 
 activityCompose = "1.13.0"
