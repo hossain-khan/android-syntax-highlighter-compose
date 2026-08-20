@@ -61,6 +61,10 @@ import com.slack.circuit.runtime.screen.Screen
 import dev.hossain.highlight.engine.HighlightTimings
 import dev.hossain.highlight.ui.rememberAtomOneDarkTheme
 import dev.hossain.highlight.ui.rememberAtomOneLightTheme
+import dev.hossain.highlight.ui.rememberDraculaDarkTheme
+import dev.hossain.highlight.ui.rememberDraculaLightTheme
+import dev.hossain.highlight.ui.rememberGithubDarkTheme
+import dev.hossain.highlight.ui.rememberGithubLightTheme
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
 import dev.hossain.highlight.ui.rememberTomorrowLightTheme
 import dev.hossain.highlight.ui.rememberTomorrowNightTheme
@@ -81,6 +85,8 @@ enum class ComposeHighlightThemePair(
 ) {
     TOMORROW("Tomorrow"),
     ATOM_ONE("Atom One"),
+    GITHUB("GitHub"),
+    DRACULA("Dracula"),
 }
 
 /**
@@ -284,11 +290,17 @@ private fun ReadyContent(
     val tomorrowNight = rememberTomorrowNightTheme()
     val atomOneLight = rememberAtomOneLightTheme()
     val atomOneDark = rememberAtomOneDarkTheme()
+    val githubLight = rememberGithubLightTheme()
+    val githubDark = rememberGithubDarkTheme()
+    val draculaLight = rememberDraculaLightTheme()
+    val draculaDark = rememberDraculaDarkTheme()
 
     val (lightTheme, darkTheme) =
         when (state.selectedThemePair) {
             ComposeHighlightThemePair.TOMORROW -> tomorrowLight to tomorrowNight
             ComposeHighlightThemePair.ATOM_ONE -> atomOneLight to atomOneDark
+            ComposeHighlightThemePair.GITHUB -> githubLight to githubDark
+            ComposeHighlightThemePair.DRACULA -> draculaLight to draculaDark
         }
     val hlLanguage = state.selectedSample.toHighlightJsLanguage()
 

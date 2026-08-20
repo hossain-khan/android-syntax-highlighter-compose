@@ -15,7 +15,7 @@ All approaches produce a Compose `AnnotatedString` and share the same code sampl
 - 🆚 **Side-by-side comparison** — compare all three approaches (output, performance, device footprint) together
 - 🌗 **Dark & light theme support** on all screens
 - 🔤 **Multiple languages** — Kotlin, Python, JSON, JavaScript
-- 🎭 **Multiple themes** — GitHub, One Dark Pro, Dracula (Shiki); VS Dark+/Light+, One Dark Pro/Quiet Light, Monokai/Solarized Light (TextMate)
+- 🎭 **Multiple themes** — GitHub, One Dark Pro, Dracula (Shiki); VS Dark+/Light+, One Dark Pro/Quiet Light, Monokai/Solarized Light (TextMate); Tomorrow, Atom One, GitHub, Dracula (Compose Highlight)
 - 📊 **Performance metrics** — network request time, total time, on-device tokenization time, line/char counts
 - 📋 **Copy to clipboard** on all screens
 - 🔄 **Refresh** (Shiki) — re-trigger the network request in one tap
