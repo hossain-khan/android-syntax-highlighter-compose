@@ -57,7 +57,7 @@ import com.slack.circuit.runtime.CircuitUiEvent
 import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
-import com.slack.circuit.runtime.screen.Screen
+import com.slack.circuit.runtime.screen.ParcelableScreen
 import dev.hossain.highlight.engine.HighlightTimings
 import dev.hossain.highlight.ui.rememberAtomOneDarkTheme
 import dev.hossain.highlight.ui.rememberAtomOneLightTheme
@@ -133,7 +133,7 @@ enum class ComposeHighlightThemePair(
  *    suppressing `SyntaxHighlightedCode`'s own copy button and language label.
  */
 @Parcelize
-data object ComposeHighlightScreen : Screen {
+data object ComposeHighlightScreen : ParcelableScreen {
     @Stable
     sealed interface State : CircuitUiState {
         val eventSink: (Event) -> Unit

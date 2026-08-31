@@ -37,7 +37,7 @@ import com.slack.circuit.runtime.CircuitUiEvent
 import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
-import com.slack.circuit.runtime.screen.Screen
+import com.slack.circuit.runtime.screen.ParcelableScreen
 import com.slack.circuitx.overlays.BottomSheetOverlay
 import dev.hossain.syntaxhighlight.BuildConfig
 import dev.hossain.syntaxhighlight.R
@@ -61,7 +61,7 @@ import kotlinx.parcelize.Parcelize
  * [ComparisonScreen].
  */
 @Parcelize
-data object HomeScreen : Screen {
+data object HomeScreen : ParcelableScreen {
     @Stable
     data class State(
         val eventSink: (Event) -> Unit,
