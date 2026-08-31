@@ -58,7 +58,7 @@ import com.slack.circuit.runtime.CircuitUiEvent
 import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
-import com.slack.circuit.runtime.screen.Screen
+import com.slack.circuit.runtime.screen.ParcelableScreen
 import dev.hossain.highlight.engine.HighlightTimings
 import dev.hossain.highlight.ui.rememberHighlightedCodeBothThemes
 import dev.hossain.highlight.ui.rememberTomorrowLightTheme
@@ -117,7 +117,7 @@ private val comparisonSamples: List<CodeSample> =
  * metrics and a device-footprint breakdown so users can easily evaluate the trade-offs.
  */
 @Parcelize
-data object ComparisonScreen : Screen {
+data object ComparisonScreen : ParcelableScreen {
     @Stable
     data class State(
         val availableSamples: List<CodeSample>,

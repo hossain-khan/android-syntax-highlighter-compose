@@ -57,7 +57,7 @@ import com.slack.circuit.runtime.CircuitUiEvent
 import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
-import com.slack.circuit.runtime.screen.Screen
+import com.slack.circuit.runtime.screen.ParcelableScreen
 import dev.hossain.shiki.model.Theme
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.data.samples.CodeSample
@@ -83,7 +83,7 @@ import kotlin.time.measureTimedValue
  * renders it with a monospace font — no grammar files needed on the device.
  */
 @Parcelize
-data object ShikiHighlightScreen : Screen {
+data object ShikiHighlightScreen : ParcelableScreen {
     @Stable
     sealed interface State : CircuitUiState {
         val selectedSample: CodeSample

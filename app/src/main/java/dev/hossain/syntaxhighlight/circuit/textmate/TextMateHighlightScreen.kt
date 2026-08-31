@@ -56,7 +56,7 @@ import com.slack.circuit.runtime.CircuitUiEvent
 import com.slack.circuit.runtime.CircuitUiState
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
-import com.slack.circuit.runtime.screen.Screen
+import com.slack.circuit.runtime.screen.ParcelableScreen
 import dev.hossain.syntaxhighlight.R
 import dev.hossain.syntaxhighlight.data.textmate.TextMateRepository
 import dev.hossain.syntaxhighlight.data.textmate.TextMateSample
@@ -109,7 +109,7 @@ import kotlin.time.measureTimedValue
  * 3. The tokenization duration is captured via `measureTimedValue` for the metrics row.
  */
 @Parcelize
-data object TextMateHighlightScreen : Screen {
+data object TextMateHighlightScreen : ParcelableScreen {
     @Stable
     sealed interface State : CircuitUiState {
         val eventSink: (Event) -> Unit
