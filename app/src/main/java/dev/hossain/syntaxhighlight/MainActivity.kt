@@ -57,12 +57,12 @@ class MainActivity
 
             setContent {
                 SyntaxHighlightAppTheme {
-                    // See https://slackhq.github.io/circuit/navigation/
-                    val navStack = rememberSaveableNavStack(root = HomeScreen)
-                    val navigator = rememberCircuitNavigator(navStack)
-
                     // See https://slackhq.github.io/circuit/circuit-content/
                     CircuitCompositionLocals(circuit) {
+                        // See https://slackhq.github.io/circuit/navigation/
+                        val navStack = rememberSaveableNavStack(root = HomeScreen)
+                        val navigator = rememberCircuitNavigator(navStack)
+
                         // See https://slackhq.github.io/circuit/shared-elements/
                         SharedElementTransitionLayout {
                             // See https://slackhq.github.io/circuit/overlays/
