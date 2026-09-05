@@ -61,7 +61,9 @@ Code is sent to a hosted [Shiki Token Service](https://github.com/hossain-khan/s
 
 **→ Full details & benchmarks:** 
 - [APK Size Impact Analysis](microbenchmark/apk-impact-analysis/)
+- [Interactive Multi-Device Benchmark Comparison](microbenchmark/results/benchmark-comparison.html)
 - [Benchmark Results — Pixel 9 Pro XL](microbenchmark/results/BENCHMARK_RESULTS_P9PXL.md)
+- [Benchmark Results — Pixel 11 Pro](microbenchmark/results/BENCHMARK_RESULTS_P11PRO.md)
 - [Benchmark Results — Galaxy S24 Ultra](microbenchmark/results/BENCHMARK_RESULTS_S24ULTRA.md)
 
 ## Tech Stack
