@@ -27,6 +27,36 @@ DEVICE_COLORS = {
 }
 
 
+def format_test_name(raw_name: str) -> str:
+    """Format benchmark method name into a clean, concise, human-readable label."""
+    name = raw_name
+    # Compose Highlight
+    name = re.sub(r'^highlight', '', name)
+    name = re.sub(r'_bothThemes$', ' (both)', name)
+    # Shiki
+    name = re.sub(r'^buildAnnotatedString_', '', name)
+    # TextMate Grammar
+    name = re.sub(r'^load', '', name)
+    name = re.sub(r'Grammar$', ' Grammar', name)
+    name = re.sub(r'Theme$', ' Theme', name)
+    # TextMate Highlight
+    name = re.sub(r'_(small|medium|large)', r' \1', name)
+    name = re.sub(r'_(lightTheme|oneDarkPro)', r' \1', name)
+
+    name = name.replace("JavaScript", "JS")
+    name = name.replace("lightTheme", "Light")
+    name = name.replace("oneDarkPro", "OneDark")
+    name = name.replace("DarkPlus", "Dark+")
+    name = name.replace("OneDarkPro", "OneDark")
+    name = name.replace("small", "Small")
+    name = name.replace("medium", "Med")
+    name = name.replace("large", "Large")
+    name = name.replace("dark", "Dark")
+    name = name.replace("light", "Light")
+    name = name.replace("_", " ").strip()
+    return name
+
+
 def parse_markdown_results(file_path: Path) -> dict:
     """Extract device info and benchmark tables from a BENCHMARK_RESULTS_*.md file."""
     content = file_path.read_text()
@@ -81,13 +111,11 @@ def parse_markdown_results(file_path: Path) -> dict:
 
         i += 1
 
-    # Extract device short name from filename: BENCHMARK_RESULTS_<SLUG>.md
     slug = file_path.stem.replace("BENCHMARK_RESULTS_", "")
     display_name = DEVICE_DISPLAY_NAMES.get(slug, device_info.get("Device", slug))
     if display_name.startswith("google ") or display_name.startswith("Google "):
         display_name = display_name.replace("google ", "").replace("Google ", "")
 
-    # Standardize API level display if version name is missing
     api = device_info.get("API Level", "")
     if api == "36":
         device_info["API Level"] = "36 (Android 15)"
@@ -102,14 +130,13 @@ def parse_markdown_results(file_path: Path) -> dict:
     }
 
 
-def generate_svg_bar_chart(categories: list[str], device_names: list[str], data_matrix: list[list[float | None]], height: int = 240, width: int = 960) -> str:
-    """Generate self-contained, responsive SVG grouped bar chart with hover states and labels."""
+def generate_svg_bar_chart(categories: list[str], device_names: list[str], data_matrix: list[list[float | None]], height: int = 290, width: int = 960) -> str:
+    """Generate self-contained, responsive SVG grouped bar chart with non-overlapping angled labels."""
     all_vals = [v for dev_data in data_matrix for v in dev_data if v is not None and v > 0]
     if not all_vals:
         return '<div class="chart-empty">No chart data available</div>'
 
     max_val = max(all_vals)
-    # Nice scale calculation
     if max_val <= 0.1:
         nice_max = 0.1
     elif max_val <= 1.0:
@@ -124,16 +151,16 @@ def generate_svg_bar_chart(categories: list[str], device_names: list[str], data_
         nice_max = math.ceil(max_val / 50) * 50
 
     pad_left = 65
-    pad_right = 25
-    pad_top = 30
-    pad_bottom = 55
+    pad_right = 30
+    pad_top = 45
+    pad_bottom = 85
     chart_w = width - pad_left - pad_right
     chart_h = height - pad_top - pad_bottom
 
     num_cats = len(categories)
     num_devs = len(device_names)
     group_w = chart_w / num_cats
-    bar_w = max(10, min(26, (group_w * 0.72) / num_devs))
+    bar_w = max(10, min(24, (group_w * 0.7) / num_devs))
     bar_gap = 3
 
     svg_parts = []
@@ -159,6 +186,8 @@ def generate_svg_bar_chart(categories: list[str], device_names: list[str], data_
         total_bars_w = num_devs * bar_w + (num_devs - 1) * bar_gap
         group_start_x = group_center - total_bars_w / 2
 
+        friendly_cat = format_test_name(cat)
+
         for dev_idx, dev_name in enumerate(device_names):
             val = data_matrix[dev_idx][cat_idx]
             x_pos = group_start_x + dev_idx * (bar_w + bar_gap)
@@ -167,24 +196,34 @@ def generate_svg_bar_chart(categories: list[str], device_names: list[str], data_
             if val is not None and val > 0:
                 bar_h = max(2.0, (val / nice_max) * chart_h)
                 y_pos = pad_top + chart_h - bar_h
-                tooltip = f"{dev_name} &bull; {cat}: {val:.2f} ms"
+                tooltip = f"{dev_name} • {cat}: {val:.2f} ms"
 
                 svg_parts.append('<g class="bar-group">')
                 svg_parts.append(f'<title>{html.escape(tooltip)}</title>')
                 svg_parts.append(f'<rect x="{x_pos:.1f}" y="{y_pos:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" fill="{color}" rx="3" class="bar-rect" />')
 
-                # Value label above bar
-                txt_y = y_pos - 4
+                # Angled value label above bar to prevent horizontal overlap
                 val_text = f"{val:.2f}" if val < 10 else f"{val:.1f}"
-                svg_parts.append(f'<text x="{x_pos + bar_w/2:.1f}" y="{txt_y:.1f}" text-anchor="middle" class="bar-val-lbl">{val_text}</text>')
+                vx = x_pos + bar_w / 2
+                vy = y_pos - 4
+                if num_cats <= 4:
+                    # Straight horizontal for wide spacing (e.g. Cross-Library)
+                    svg_parts.append(f'<text x="{vx:.1f}" y="{vy:.1f}" text-anchor="middle" class="bar-val-lbl">{val_text}</text>')
+                else:
+                    # Angled at -45° to eliminate horizontal collision
+                    svg_parts.append(f'<text x="{vx:.1f}" y="{vy:.1f}" transform="rotate(-45, {vx:.1f}, {vy:.1f})" text-anchor="start" class="bar-val-lbl">{val_text}</text>')
                 svg_parts.append('</g>')
             else:
-                # Missing test mark
-                svg_parts.append(f'<text x="{x_pos + bar_w/2:.1f}" y="{pad_top + chart_h - 4:.1f}" text-anchor="middle" class="bar-na-lbl">&mdash;</text>')
+                vx = x_pos + bar_w / 2
+                svg_parts.append(f'<text x="{vx:.1f}" y="{pad_top + chart_h - 4:.1f}" text-anchor="middle" class="bar-na-lbl">&mdash;</text>')
 
-        # Category label under group
-        disp_cat = cat if len(cat) <= 28 else cat[:26] + "..."
-        svg_parts.append(f'<text x="{group_center:.1f}" y="{height - 18}" text-anchor="middle" class="cat-lbl">{html.escape(disp_cat)}</text>')
+        # Category label under group (angled at -30° with text-anchor="end" for 100% collision-free layout)
+        lx = group_center
+        ly = pad_top + chart_h + 14
+        if num_cats <= 4:
+            svg_parts.append(f'<text x="{lx:.1f}" y="{ly + 10:.1f}" text-anchor="middle" class="cat-lbl">{html.escape(friendly_cat)}</text>')
+        else:
+            svg_parts.append(f'<text x="{lx:.1f}" y="{ly:.1f}" transform="rotate(-30, {lx:.1f}, {ly:.1f})" text-anchor="end" class="cat-lbl">{html.escape(friendly_cat)}</text>')
 
     svg_parts.append('</svg>')
     return "".join(svg_parts)
@@ -398,12 +437,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border: 1px solid var(--border);
             border-radius: 8px;
             background: var(--bg-card);
-            padding: 0.5rem;
+            padding: 0.75rem 0.5rem;
         }
         .svg-chart {
             width: 100%;
             height: auto;
-            min-height: 200px;
+            min-height: 250px;
             display: block;
         }
         .grid-line {
@@ -424,7 +463,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }
         .bar-val-lbl {
             fill: var(--text-muted);
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 600;
             font-family: inherit;
         }
@@ -434,11 +473,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             font-weight: 400;
         }
         .bar-rect {
-            transition: opacity 0.2s, transform 0.2s;
+            transition: opacity 0.2s;
             cursor: pointer;
         }
         .bar-group:hover .bar-rect {
-            opacity: 0.85;
+            opacity: 0.82;
         }
         .table-responsive {
             overflow-x: auto;
@@ -495,11 +534,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .na {
             color: var(--text-muted);
             font-style: italic;
-        }
-        .footnote {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 0.65rem;
         }
         .footer {
             text-align: center;
@@ -585,14 +619,12 @@ def generate_html(devices: list[dict]) -> str:
     """Generate self-contained HTML report with SVG charts."""
     device_names = [d["device_name"] for d in devices]
 
-    # Legend HTML
     legend_items = []
     for dname in device_names:
         c = DEVICE_COLORS[dname]["border"]
         legend_items.append(f'<div class="legend-item"><div class="legend-color" style="background: {c};"></div><span>{html.escape(dname)}</span></div>')
     legend_html = "".join(legend_items)
 
-    # Preferred section order
     preferred_sections = [
         "Compose Highlight — WebView JS Bridge",
         "Shiki — AnnotatedString Building",
@@ -625,7 +657,7 @@ def generate_html(devices: list[dict]) -> str:
             dev_vals.append(val)
         cross_matrix.append(dev_vals)
 
-    cross_chart_svg = generate_svg_bar_chart(cross_categories, device_names, cross_matrix, height=240, width=960)
+    cross_chart_svg = generate_svg_bar_chart(cross_categories, device_names, cross_matrix, height=270, width=960)
 
     # Device Cards HTML
     device_cards_html = []
@@ -649,7 +681,6 @@ def generate_html(devices: list[dict]) -> str:
     # Detailed Sections HTML with SVG charts
     sections_html = []
     for sec_idx, sec in enumerate(all_sections):
-        # Collect tests in this section
         test_set = []
         for dev in devices:
             if sec in dev["sections"]:
@@ -664,7 +695,6 @@ def generate_html(devices: list[dict]) -> str:
             return 999999
         test_set.sort(key=sort_key)
 
-        # Build data matrix for SVG chart
         sec_matrix = []
         for dev in devices:
             dev_vals = []
@@ -675,15 +705,12 @@ def generate_html(devices: list[dict]) -> str:
                 dev_vals.append(val)
             sec_matrix.append(dev_vals)
 
-        # SVG Chart for section
-        sec_chart_svg = generate_svg_bar_chart(test_set, device_names, sec_matrix, height=250, width=960)
+        sec_chart_svg = generate_svg_bar_chart(test_set, device_names, sec_matrix, height=290, width=960)
 
-        # Table rows
         table_rows = []
         for cat_idx, t in enumerate(test_set):
             row_cells = [f"<td><code>{html.escape(t)}</code></td>"]
 
-            # Collect valid positive times for this test
             times = []
             for dev in devices:
                 if sec in dev["sections"] and t in dev["sections"][sec]:
@@ -701,7 +728,6 @@ def generate_html(devices: list[dict]) -> str:
                     ms = item["median_ms"]
                     allocs = item["allocs"]
 
-                    # Only award fastest if not tied across all devices and strictly matches min_time
                     is_fastest = (ms is not None and min_time is not None and abs(ms - min_time) < 0.001 and not is_tie and len(times) > 1)
                     badge = '<span class="fastest-badge">Fastest</span>' if is_fastest else ''
 
