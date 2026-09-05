@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AndroidX Benchmark: Multi-Device Performance Comparison</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <style>
         :root {
             --bg: #f8fafc;
@@ -13,7 +12,7 @@
             --text-muted: #64748b;
             --border: #e2e8f0;
             --border-light: #f1f5f9;
-            --th-bg: #f1f5f9;
+            --th-bg: #f8fafc;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
             --toggle-bg: #cbd5e1;
             --toggle-knob: #ffffff;
@@ -22,6 +21,8 @@
             --fastest-border: #a7f3d0;
             --callout-bg: #f0f9ff;
             --callout-border: #0284c7;
+            --grid-line: #e2e8f0;
+            --axis-text: #64748b;
         }
         [data-theme="dark"] {
             --bg: #0f172a;
@@ -39,6 +40,8 @@
             --fastest-border: #059669;
             --callout-bg: #082f49;
             --callout-border: #38bdf8;
+            --grid-line: #334155;
+            --axis-text: #94a3b8;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -163,16 +166,13 @@
         .card h2 {
             font-size: 1.35rem;
             font-weight: 700;
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.5rem;
         }
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.25rem;
-        }
-        .section-header h2 {
-            margin-bottom: 0;
+            margin-bottom: 0.75rem;
         }
         .badge-count {
             background: var(--th-bg);
@@ -181,10 +181,72 @@
             font-weight: 600;
             padding: 0.25rem 0.65rem;
             border-radius: 9999px;
+            border: 1px solid var(--border);
+        }
+        .chart-legend {
+            display: flex;
+            gap: 1.25rem;
+            margin: 1rem 0 0.5rem;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
         }
         .chart-box {
-            margin: 1.5rem 0;
-            position: relative;
+            margin: 1rem 0 1.5rem;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            padding: 0.5rem;
+        }
+        .svg-chart {
+            width: 100%;
+            height: auto;
+            min-height: 200px;
+            display: block;
+        }
+        .grid-line {
+            stroke: var(--grid-line);
+            stroke-width: 1;
+            stroke-dasharray: 3 3;
+        }
+        .axis-lbl {
+            fill: var(--axis-text);
+            font-size: 11px;
+            font-family: inherit;
+        }
+        .cat-lbl {
+            fill: var(--text);
+            font-size: 11px;
+            font-weight: 600;
+            font-family: inherit;
+        }
+        .bar-val-lbl {
+            fill: var(--text-muted);
+            font-size: 10px;
+            font-weight: 600;
+            font-family: inherit;
+        }
+        .bar-na-lbl {
+            fill: var(--text-muted);
+            font-size: 12px;
+            font-weight: 400;
+        }
+        .bar-rect {
+            transition: opacity 0.2s, transform 0.2s;
+            cursor: pointer;
+        }
+        .bar-group:hover .bar-rect {
+            opacity: 0.85;
         }
         .table-responsive {
             overflow-x: auto;
@@ -217,6 +279,7 @@
             padding: 0.15rem 0.4rem;
             border-radius: 4px;
             font-size: 0.84rem;
+            border: 1px solid var(--border);
         }
         .fastest-cell {
             background: var(--fastest-bg);
@@ -240,6 +303,11 @@
         .na {
             color: var(--text-muted);
             font-style: italic;
+        }
+        .footnote {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.65rem;
         }
         .footer {
             text-align: center;
@@ -266,25 +334,25 @@
 
         <!-- Callout -->
         <div class="callout">
-            <strong>Benchmark Overview:</strong> Real-device benchmarks executed with AndroidX Microbenchmark in release mode with R8 minification. Timings represent median execution times over multiple measurement iterations. Green highlights indicate the fastest execution time for each test across devices.
+            <strong>Benchmark Overview:</strong> Real-device benchmarks executed with AndroidX Microbenchmark in release mode with R8 minification. Timings represent median execution times over measurement iterations. Green highlights indicate the fastest device for each test (minimum 2 comparable results, excluding ties). A dash (&mdash;) indicates tests not included in that device's specific benchmark run.
         </div>
 
         <!-- Device Cards -->
         <div class="device-grid">
             
-        <div class="device-card" style="--card-accent: #4285F4;">
-            <div class="device-badge" style="background: #4285F4;">P9PXL</div>
+        <div class="device-card" style="--card-accent: #3b82f6;">
+            <div class="device-badge" style="background: #3b82f6;">P9PXL</div>
             <h3>Pixel 9 Pro XL</h3>
             <table class="specs-table">
-                <tr><td>API Level</td><td><strong>36</strong></td></tr>
+                <tr><td>API Level</td><td><strong>36 (Android 15)</strong></td></tr>
                 <tr><td>CPU Cores</td><td>8 cores</td></tr>
                 <tr><td>CPU Max Freq</td><td>3.10 GHz</td></tr>
                 <tr><td>RAM</td><td>15.2 GB</td></tr>
             </table>
         </div>
         
-        <div class="device-card" style="--card-accent: #9C27B0;">
-            <div class="device-badge" style="background: #9C27B0;">S24ULTRA</div>
+        <div class="device-card" style="--card-accent: #a855f7;">
+            <div class="device-badge" style="background: #a855f7;">S24ULTRA</div>
             <h3>Galaxy S24 Ultra</h3>
             <table class="specs-table">
                 <tr><td>API Level</td><td><strong>36 (Android 15)</strong></td></tr>
@@ -294,8 +362,8 @@
             </table>
         </div>
         
-        <div class="device-card" style="--card-accent: #0F9D58;">
-            <div class="device-badge" style="background: #0F9D58;">P11PRO</div>
+        <div class="device-card" style="--card-accent: #10b981;">
+            <div class="device-badge" style="background: #10b981;">P11PRO</div>
             <h3>Pixel 11 Pro</h3>
             <table class="specs-table">
                 <tr><td>API Level</td><td><strong>37 (Android 17)</strong></td></tr>
@@ -310,11 +378,14 @@
         <!-- Cross-Library Comparison Card -->
         <div class="card">
             <h2>Cross-Library Comparison (Small Samples)</h2>
-            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.92rem;">
-                Comparing median highlighting execution times across all three libraries on small code samples.
+            <p style="color: var(--text-muted); font-size: 0.92rem;">
+                Comparing median execution times across all three highlighting libraries on small code samples.
             </p>
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-color" style="background: #3b82f6;"></div><span>Pixel 9 Pro XL</span></div><div class="legend-item"><div class="legend-color" style="background: #a855f7;"></div><span>Galaxy S24 Ultra</span></div><div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>Pixel 11 Pro</span></div>
+            </div>
             <div class="chart-box">
-                <canvas id="crossLibraryChart" height="100"></canvas>
+                <svg viewBox="0 0 960 240" class="svg-chart" xmlns="http://www.w3.org/2000/svg"><line x1="65" y1="185.0" x2="935" y2="185.0" class="grid-line" /><text x="57" y="189.0" text-anchor="end" class="axis-lbl">0 ms</text><line x1="65" y1="146.2" x2="935" y2="146.2" class="grid-line" /><text x="57" y="150.2" text-anchor="end" class="axis-lbl">4 ms</text><line x1="65" y1="107.5" x2="935" y2="107.5" class="grid-line" /><text x="57" y="111.5" text-anchor="end" class="axis-lbl">8 ms</text><line x1="65" y1="68.8" x2="935" y2="68.8" class="grid-line" /><text x="57" y="72.8" text-anchor="end" class="axis-lbl">11 ms</text><line x1="65" y1="30.0" x2="935" y2="30.0" class="grid-line" /><text x="57" y="34.0" text-anchor="end" class="axis-lbl">15 ms</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; Compose Highlight: 10.62 ms</title><rect x="168.0" y="75.3" width="26.0" height="109.7" fill="#3b82f6" rx="3" class="bar-rect" /><text x="181.0" y="71.3" text-anchor="middle" class="bar-val-lbl">10.6</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; Compose Highlight: 2.10 ms</title><rect x="197.0" y="163.3" width="26.0" height="21.7" fill="#a855f7" rx="3" class="bar-rect" /><text x="210.0" y="159.3" text-anchor="middle" class="bar-val-lbl">2.10</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; Compose Highlight: 2.21 ms</title><rect x="226.0" y="162.2" width="26.0" height="22.8" fill="#10b981" rx="3" class="bar-rect" /><text x="239.0" y="158.2" text-anchor="middle" class="bar-val-lbl">2.21</text></g><text x="210.0" y="222" text-anchor="middle" class="cat-lbl">Compose Highlight</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; Shiki: 0.04 ms</title><rect x="458.0" y="183.0" width="26.0" height="2.0" fill="#3b82f6" rx="3" class="bar-rect" /><text x="471.0" y="179.0" text-anchor="middle" class="bar-val-lbl">0.04</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; Shiki: 0.04 ms</title><rect x="487.0" y="183.0" width="26.0" height="2.0" fill="#a855f7" rx="3" class="bar-rect" /><text x="500.0" y="179.0" text-anchor="middle" class="bar-val-lbl">0.04</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; Shiki: 0.03 ms</title><rect x="516.0" y="183.0" width="26.0" height="2.0" fill="#10b981" rx="3" class="bar-rect" /><text x="529.0" y="179.0" text-anchor="middle" class="bar-val-lbl">0.03</text></g><text x="500.0" y="222" text-anchor="middle" class="cat-lbl">Shiki</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; TextMate: 10.56 ms</title><rect x="748.0" y="75.9" width="26.0" height="109.1" fill="#3b82f6" rx="3" class="bar-rect" /><text x="761.0" y="71.9" text-anchor="middle" class="bar-val-lbl">10.6</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; TextMate: 6.28 ms</title><rect x="777.0" y="120.1" width="26.0" height="64.9" fill="#a855f7" rx="3" class="bar-rect" /><text x="790.0" y="116.1" text-anchor="middle" class="bar-val-lbl">6.28</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; TextMate: 4.97 ms</title><rect x="806.0" y="133.6" width="26.0" height="51.4" fill="#10b981" rx="3" class="bar-rect" /><text x="819.0" y="129.6" text-anchor="middle" class="bar-val-lbl">4.97</text></g><text x="790.0" y="222" text-anchor="middle" class="cat-lbl">TextMate</text></svg>
             </div>
         </div>
 
@@ -326,8 +397,12 @@
                 <span class="badge-count">7 benchmarks</span>
             </div>
 
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-color" style="background: #3b82f6;"></div><span>Pixel 9 Pro XL</span></div><div class="legend-item"><div class="legend-color" style="background: #a855f7;"></div><span>Galaxy S24 Ultra</span></div><div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>Pixel 11 Pro</span></div>
+            </div>
+
             <div class="chart-box">
-                <canvas id="chart-0" height="100"></canvas>
+                <svg viewBox="0 0 960 250" class="svg-chart" xmlns="http://www.w3.org/2000/svg"><line x1="65" y1="195.0" x2="935" y2="195.0" class="grid-line" /><text x="57" y="199.0" text-anchor="end" class="axis-lbl">0 ms</text><line x1="65" y1="153.8" x2="935" y2="153.8" class="grid-line" /><text x="57" y="157.8" text-anchor="end" class="axis-lbl">11 ms</text><line x1="65" y1="112.5" x2="935" y2="112.5" class="grid-line" /><text x="57" y="116.5" text-anchor="end" class="axis-lbl">22 ms</text><line x1="65" y1="71.2" x2="935" y2="71.2" class="grid-line" /><text x="57" y="75.2" text-anchor="end" class="axis-lbl">34 ms</text><line x1="65" y1="30.0" x2="935" y2="30.0" class="grid-line" /><text x="57" y="34.0" text-anchor="end" class="axis-lbl">45 ms</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightKotlin_bothThemes: 7.32 ms</title><rect x="85.1" y="168.2" width="26.0" height="26.8" fill="#3b82f6" rx="3" class="bar-rect" /><text x="98.1" y="164.2" text-anchor="middle" class="bar-val-lbl">7.32</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightKotlin_bothThemes: 1.50 ms</title><rect x="114.1" y="189.5" width="26.0" height="5.5" fill="#a855f7" rx="3" class="bar-rect" /><text x="127.1" y="185.5" text-anchor="middle" class="bar-val-lbl">1.50</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightKotlin_bothThemes: 0.72 ms</title><rect x="143.1" y="192.4" width="26.0" height="2.6" fill="#10b981" rx="3" class="bar-rect" /><text x="156.1" y="188.4" text-anchor="middle" class="bar-val-lbl">0.72</text></g><text x="127.1" y="232" text-anchor="middle" class="cat-lbl">highlightKotlin_bothThemes</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightPython_bothThemes: 9.62 ms</title><rect x="209.4" y="159.7" width="26.0" height="35.3" fill="#3b82f6" rx="3" class="bar-rect" /><text x="222.4" y="155.7" text-anchor="middle" class="bar-val-lbl">9.62</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightPython_bothThemes: 1.92 ms</title><rect x="238.4" y="188.0" width="26.0" height="7.0" fill="#a855f7" rx="3" class="bar-rect" /><text x="251.4" y="184.0" text-anchor="middle" class="bar-val-lbl">1.92</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightPython_bothThemes: 0.61 ms</title><rect x="267.4" y="192.8" width="26.0" height="2.2" fill="#10b981" rx="3" class="bar-rect" /><text x="280.4" y="188.8" text-anchor="middle" class="bar-val-lbl">0.61</text></g><text x="251.4" y="232" text-anchor="middle" class="cat-lbl">highlightPython_bothThemes</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightJson_bothThemes: 10.62 ms</title><rect x="333.7" y="156.1" width="26.0" height="38.9" fill="#3b82f6" rx="3" class="bar-rect" /><text x="346.7" y="152.1" text-anchor="middle" class="bar-val-lbl">10.6</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightJson_bothThemes: 2.10 ms</title><rect x="362.7" y="187.3" width="26.0" height="7.7" fill="#a855f7" rx="3" class="bar-rect" /><text x="375.7" y="183.3" text-anchor="middle" class="bar-val-lbl">2.10</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightJson_bothThemes: 2.21 ms</title><rect x="391.7" y="186.9" width="26.0" height="8.1" fill="#10b981" rx="3" class="bar-rect" /><text x="404.7" y="182.9" text-anchor="middle" class="bar-val-lbl">2.21</text></g><text x="375.7" y="232" text-anchor="middle" class="cat-lbl">highlightJson_bothThemes</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightJavaScript_bothThemes: 12.72 ms</title><rect x="458.0" y="148.4" width="26.0" height="46.6" fill="#3b82f6" rx="3" class="bar-rect" /><text x="471.0" y="144.4" text-anchor="middle" class="bar-val-lbl">12.7</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightJavaScript_bothThemes: 2.17 ms</title><rect x="487.0" y="187.0" width="26.0" height="8.0" fill="#a855f7" rx="3" class="bar-rect" /><text x="500.0" y="183.0" text-anchor="middle" class="bar-val-lbl">2.17</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightJavaScript_bothThemes: 0.82 ms</title><rect x="516.0" y="192.0" width="26.0" height="3.0" fill="#10b981" rx="3" class="bar-rect" /><text x="529.0" y="188.0" text-anchor="middle" class="bar-val-lbl">0.82</text></g><text x="500.0" y="232" text-anchor="middle" class="cat-lbl">highlightJavaScript_bothTh...</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightKotlin_medium_bothThemes: 14.33 ms</title><rect x="582.3" y="142.5" width="26.0" height="52.5" fill="#3b82f6" rx="3" class="bar-rect" /><text x="595.3" y="138.5" text-anchor="middle" class="bar-val-lbl">14.3</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightKotlin_medium_bothThemes: 3.97 ms</title><rect x="611.3" y="180.4" width="26.0" height="14.6" fill="#a855f7" rx="3" class="bar-rect" /><text x="624.3" y="176.4" text-anchor="middle" class="bar-val-lbl">3.97</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightKotlin_medium_bothThemes: 1.34 ms</title><rect x="640.3" y="190.1" width="26.0" height="4.9" fill="#10b981" rx="3" class="bar-rect" /><text x="653.3" y="186.1" text-anchor="middle" class="bar-val-lbl">1.34</text></g><text x="624.3" y="232" text-anchor="middle" class="cat-lbl">highlightKotlin_medium_bot...</text><text x="719.6" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightJavaScript_large_bothThemes: 30.64 ms</title><rect x="735.6" y="82.7" width="26.0" height="112.3" fill="#a855f7" rx="3" class="bar-rect" /><text x="748.6" y="78.7" text-anchor="middle" class="bar-val-lbl">30.6</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightJavaScript_large_bothThemes: 21.20 ms</title><rect x="764.6" y="117.3" width="26.0" height="77.7" fill="#10b981" rx="3" class="bar-rect" /><text x="777.6" y="113.3" text-anchor="middle" class="bar-val-lbl">21.2</text></g><text x="748.6" y="232" text-anchor="middle" class="cat-lbl">highlightJavaScript_large_...</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightKotlin_large_bothThemes: 40.96 ms</title><rect x="830.9" y="44.8" width="26.0" height="150.2" fill="#3b82f6" rx="3" class="bar-rect" /><text x="843.9" y="40.8" text-anchor="middle" class="bar-val-lbl">41.0</text></g><text x="872.9" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><text x="901.9" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><text x="872.9" y="232" text-anchor="middle" class="cat-lbl">highlightKotlin_large_both...</text></svg>
             </div>
 
             <div class="table-responsive">
@@ -351,8 +426,12 @@
                 <span class="badge-count">4 benchmarks</span>
             </div>
 
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-color" style="background: #3b82f6;"></div><span>Pixel 9 Pro XL</span></div><div class="legend-item"><div class="legend-color" style="background: #a855f7;"></div><span>Galaxy S24 Ultra</span></div><div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>Pixel 11 Pro</span></div>
+            </div>
+
             <div class="chart-box">
-                <canvas id="chart-1" height="100"></canvas>
+                <svg viewBox="0 0 960 250" class="svg-chart" xmlns="http://www.w3.org/2000/svg"><line x1="65" y1="195.0" x2="935" y2="195.0" class="grid-line" /><text x="57" y="199.0" text-anchor="end" class="axis-lbl">0.00 ms</text><line x1="65" y1="153.8" x2="935" y2="153.8" class="grid-line" /><text x="57" y="157.8" text-anchor="end" class="axis-lbl">0.17 ms</text><line x1="65" y1="112.5" x2="935" y2="112.5" class="grid-line" /><text x="57" y="116.5" text-anchor="end" class="axis-lbl">0.35 ms</text><line x1="65" y1="71.2" x2="935" y2="71.2" class="grid-line" /><text x="57" y="75.2" text-anchor="end" class="axis-lbl">0.52 ms</text><line x1="65" y1="30.0" x2="935" y2="30.0" class="grid-line" /><text x="57" y="34.0" text-anchor="end" class="axis-lbl">0.70 ms</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; buildAnnotatedString_small_dark: 0.04 ms</title><rect x="131.8" y="185.6" width="26.0" height="9.4" fill="#3b82f6" rx="3" class="bar-rect" /><text x="144.8" y="181.6" text-anchor="middle" class="bar-val-lbl">0.04</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; buildAnnotatedString_small_dark: 0.04 ms</title><rect x="160.8" y="185.6" width="26.0" height="9.4" fill="#a855f7" rx="3" class="bar-rect" /><text x="173.8" y="181.6" text-anchor="middle" class="bar-val-lbl">0.04</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; buildAnnotatedString_small_dark: 0.04 ms</title><rect x="189.8" y="185.6" width="26.0" height="9.4" fill="#10b981" rx="3" class="bar-rect" /><text x="202.8" y="181.6" text-anchor="middle" class="bar-val-lbl">0.04</text></g><text x="173.8" y="232" text-anchor="middle" class="cat-lbl">buildAnnotatedString_small...</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; buildAnnotatedString_small_light: 0.04 ms</title><rect x="349.2" y="185.6" width="26.0" height="9.4" fill="#3b82f6" rx="3" class="bar-rect" /><text x="362.2" y="181.6" text-anchor="middle" class="bar-val-lbl">0.04</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; buildAnnotatedString_small_light: 0.04 ms</title><rect x="378.2" y="185.6" width="26.0" height="9.4" fill="#a855f7" rx="3" class="bar-rect" /><text x="391.2" y="181.6" text-anchor="middle" class="bar-val-lbl">0.04</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; buildAnnotatedString_small_light: 0.03 ms</title><rect x="407.2" y="187.9" width="26.0" height="7.1" fill="#10b981" rx="3" class="bar-rect" /><text x="420.2" y="183.9" text-anchor="middle" class="bar-val-lbl">0.03</text></g><text x="391.2" y="232" text-anchor="middle" class="cat-lbl">buildAnnotatedString_small...</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; buildAnnotatedString_large_light: 0.60 ms</title><rect x="566.8" y="53.6" width="26.0" height="141.4" fill="#3b82f6" rx="3" class="bar-rect" /><text x="579.8" y="49.6" text-anchor="middle" class="bar-val-lbl">0.60</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; buildAnnotatedString_large_light: 0.62 ms</title><rect x="595.8" y="48.9" width="26.0" height="146.1" fill="#a855f7" rx="3" class="bar-rect" /><text x="608.8" y="44.9" text-anchor="middle" class="bar-val-lbl">0.62</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; buildAnnotatedString_large_light: 0.53 ms</title><rect x="624.8" y="70.1" width="26.0" height="124.9" fill="#10b981" rx="3" class="bar-rect" /><text x="637.8" y="66.1" text-anchor="middle" class="bar-val-lbl">0.53</text></g><text x="608.8" y="232" text-anchor="middle" class="cat-lbl">buildAnnotatedString_large...</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; buildAnnotatedString_large_dark: 0.61 ms</title><rect x="784.2" y="51.2" width="26.0" height="143.8" fill="#3b82f6" rx="3" class="bar-rect" /><text x="797.2" y="47.2" text-anchor="middle" class="bar-val-lbl">0.61</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; buildAnnotatedString_large_dark: 0.62 ms</title><rect x="813.2" y="48.9" width="26.0" height="146.1" fill="#a855f7" rx="3" class="bar-rect" /><text x="826.2" y="44.9" text-anchor="middle" class="bar-val-lbl">0.62</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; buildAnnotatedString_large_dark: 0.54 ms</title><rect x="842.2" y="67.7" width="26.0" height="127.3" fill="#10b981" rx="3" class="bar-rect" /><text x="855.2" y="63.7" text-anchor="middle" class="bar-val-lbl">0.54</text></g><text x="826.2" y="232" text-anchor="middle" class="cat-lbl">buildAnnotatedString_large...</text></svg>
             </div>
 
             <div class="table-responsive">
@@ -364,7 +443,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td><code>buildAnnotatedString_small_dark</code></td><td class="fastest-cell"><strong>0.04 ms</strong> <span class="fastest-badge">Fastest</span></td><td class="fastest-cell"><strong>0.04 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,055 allocs</div></td><td class="fastest-cell"><strong>0.04 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,055 allocs</div></td></tr><tr><td><code>buildAnnotatedString_small_light</code></td><td><strong>0.04 ms</strong> </td><td><strong>0.04 ms</strong> <div class="alloc-sub">1,054 allocs</div></td><td class="fastest-cell"><strong>0.03 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,054 allocs</div></td></tr><tr><td><code>buildAnnotatedString_large_light</code></td><td><strong>0.60 ms</strong> </td><td><strong>0.62 ms</strong> <div class="alloc-sub">16,252 allocs</div></td><td class="fastest-cell"><strong>0.53 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">16,253 allocs</div></td></tr><tr><td><code>buildAnnotatedString_large_dark</code></td><td><strong>0.61 ms</strong> </td><td><strong>0.62 ms</strong> <div class="alloc-sub">16,252 allocs</div></td><td class="fastest-cell"><strong>0.54 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">16,252 allocs</div></td></tr>
+                        <tr><td><code>buildAnnotatedString_small_dark</code></td><td><strong>0.04 ms</strong> </td><td><strong>0.04 ms</strong> <div class="alloc-sub">1,055 allocs</div></td><td><strong>0.04 ms</strong> <div class="alloc-sub">1,055 allocs</div></td></tr><tr><td><code>buildAnnotatedString_small_light</code></td><td><strong>0.04 ms</strong> </td><td><strong>0.04 ms</strong> <div class="alloc-sub">1,054 allocs</div></td><td class="fastest-cell"><strong>0.03 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,054 allocs</div></td></tr><tr><td><code>buildAnnotatedString_large_light</code></td><td><strong>0.60 ms</strong> </td><td><strong>0.62 ms</strong> <div class="alloc-sub">16,252 allocs</div></td><td class="fastest-cell"><strong>0.53 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">16,253 allocs</div></td></tr><tr><td><code>buildAnnotatedString_large_dark</code></td><td><strong>0.61 ms</strong> </td><td><strong>0.62 ms</strong> <div class="alloc-sub">16,252 allocs</div></td><td class="fastest-cell"><strong>0.54 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">16,252 allocs</div></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -376,8 +455,12 @@
                 <span class="badge-count">9 benchmarks</span>
             </div>
 
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-color" style="background: #3b82f6;"></div><span>Pixel 9 Pro XL</span></div><div class="legend-item"><div class="legend-color" style="background: #a855f7;"></div><span>Galaxy S24 Ultra</span></div><div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>Pixel 11 Pro</span></div>
+            </div>
+
             <div class="chart-box">
-                <canvas id="chart-2" height="100"></canvas>
+                <svg viewBox="0 0 960 250" class="svg-chart" xmlns="http://www.w3.org/2000/svg"><line x1="65" y1="195.0" x2="935" y2="195.0" class="grid-line" /><text x="57" y="199.0" text-anchor="end" class="axis-lbl">0 ms</text><line x1="65" y1="153.8" x2="935" y2="153.8" class="grid-line" /><text x="57" y="157.8" text-anchor="end" class="axis-lbl">62 ms</text><line x1="65" y1="112.5" x2="935" y2="112.5" class="grid-line" /><text x="57" y="116.5" text-anchor="end" class="axis-lbl">125 ms</text><line x1="65" y1="71.2" x2="935" y2="71.2" class="grid-line" /><text x="57" y="75.2" text-anchor="end" class="axis-lbl">188 ms</text><line x1="65" y1="30.0" x2="935" y2="30.0" class="grid-line" /><text x="57" y="34.0" text-anchor="end" class="axis-lbl">250 ms</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightKotlin_lightTheme: 2.13 ms</title><rect x="75.5" y="193.0" width="23.2" height="2.0" fill="#3b82f6" rx="3" class="bar-rect" /><text x="87.1" y="189.0" text-anchor="middle" class="bar-val-lbl">2.13</text></g><text x="113.3" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightKotlin_lightTheme: 1.04 ms</title><rect x="127.9" y="193.0" width="23.2" height="2.0" fill="#10b981" rx="3" class="bar-rect" /><text x="139.5" y="189.0" text-anchor="middle" class="bar-val-lbl">1.04</text></g><text x="113.3" y="232" text-anchor="middle" class="cat-lbl">highlightKotlin_lightTheme</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightKotlin_small: 2.18 ms</title><rect x="172.2" y="193.0" width="23.2" height="2.0" fill="#3b82f6" rx="3" class="bar-rect" /><text x="183.8" y="189.0" text-anchor="middle" class="bar-val-lbl">2.18</text></g><text x="210.0" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightKotlin_small: 1.02 ms</title><rect x="224.6" y="193.0" width="23.2" height="2.0" fill="#10b981" rx="3" class="bar-rect" /><text x="236.2" y="189.0" text-anchor="middle" class="bar-val-lbl">1.02</text></g><text x="210.0" y="232" text-anchor="middle" class="cat-lbl">highlightKotlin_small</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightJson_small: 2.91 ms</title><rect x="268.9" y="193.0" width="23.2" height="2.0" fill="#3b82f6" rx="3" class="bar-rect" /><text x="280.5" y="189.0" text-anchor="middle" class="bar-val-lbl">2.91</text></g><text x="306.7" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightJson_small: 1.48 ms</title><rect x="321.3" y="193.0" width="23.2" height="2.0" fill="#10b981" rx="3" class="bar-rect" /><text x="332.9" y="189.0" text-anchor="middle" class="bar-val-lbl">1.48</text></g><text x="306.7" y="232" text-anchor="middle" class="cat-lbl">highlightJson_small</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightKotlin_oneDarkPro: 3.72 ms</title><rect x="365.5" y="192.5" width="23.2" height="2.5" fill="#3b82f6" rx="3" class="bar-rect" /><text x="377.1" y="188.5" text-anchor="middle" class="bar-val-lbl">3.72</text></g><text x="403.3" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightKotlin_oneDarkPro: 1.72 ms</title><rect x="417.9" y="193.0" width="23.2" height="2.0" fill="#10b981" rx="3" class="bar-rect" /><text x="429.5" y="189.0" text-anchor="middle" class="bar-val-lbl">1.72</text></g><text x="403.3" y="232" text-anchor="middle" class="cat-lbl">highlightKotlin_oneDarkPro</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightPython_small: 8.36 ms</title><rect x="462.2" y="189.5" width="23.2" height="5.5" fill="#3b82f6" rx="3" class="bar-rect" /><text x="473.8" y="185.5" text-anchor="middle" class="bar-val-lbl">8.36</text></g><text x="500.0" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightPython_small: 3.67 ms</title><rect x="514.6" y="192.6" width="23.2" height="2.4" fill="#10b981" rx="3" class="bar-rect" /><text x="526.2" y="188.6" text-anchor="middle" class="bar-val-lbl">3.67</text></g><text x="500.0" y="232" text-anchor="middle" class="cat-lbl">highlightPython_small</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightKotlin_medium: 10.11 ms</title><rect x="558.9" y="188.3" width="23.2" height="6.7" fill="#3b82f6" rx="3" class="bar-rect" /><text x="570.5" y="184.3" text-anchor="middle" class="bar-val-lbl">10.1</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightKotlin_medium: 5.41 ms</title><rect x="585.1" y="191.4" width="23.2" height="3.6" fill="#a855f7" rx="3" class="bar-rect" /><text x="596.7" y="187.4" text-anchor="middle" class="bar-val-lbl">5.41</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightKotlin_medium: 5.12 ms</title><rect x="611.3" y="191.6" width="23.2" height="3.4" fill="#10b981" rx="3" class="bar-rect" /><text x="622.9" y="187.6" text-anchor="middle" class="bar-val-lbl">5.12</text></g><text x="596.7" y="232" text-anchor="middle" class="cat-lbl">highlightKotlin_medium</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightJavaScript_small: 10.56 ms</title><rect x="655.5" y="188.0" width="23.2" height="7.0" fill="#3b82f6" rx="3" class="bar-rect" /><text x="667.1" y="184.0" text-anchor="middle" class="bar-val-lbl">10.6</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightJavaScript_small: 6.28 ms</title><rect x="681.7" y="190.9" width="23.2" height="4.1" fill="#a855f7" rx="3" class="bar-rect" /><text x="693.3" y="186.9" text-anchor="middle" class="bar-val-lbl">6.28</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightJavaScript_small: 4.97 ms</title><rect x="707.9" y="191.7" width="23.2" height="3.3" fill="#10b981" rx="3" class="bar-rect" /><text x="719.5" y="187.7" text-anchor="middle" class="bar-val-lbl">4.97</text></g><text x="693.3" y="232" text-anchor="middle" class="cat-lbl">highlightJavaScript_small</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; highlightKotlin_large: 78.79 ms</title><rect x="752.2" y="143.0" width="23.2" height="52.0" fill="#3b82f6" rx="3" class="bar-rect" /><text x="763.8" y="139.0" text-anchor="middle" class="bar-val-lbl">78.8</text></g><text x="790.0" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><text x="816.2" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><text x="790.0" y="232" text-anchor="middle" class="cat-lbl">highlightKotlin_large</text><text x="860.5" y="191.0" text-anchor="middle" class="bar-na-lbl">&mdash;</text><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; highlightJavaScript_large: 242.89 ms</title><rect x="875.1" y="34.7" width="23.2" height="160.3" fill="#a855f7" rx="3" class="bar-rect" /><text x="886.7" y="30.7" text-anchor="middle" class="bar-val-lbl">242.9</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; highlightJavaScript_large: 210.15 ms</title><rect x="901.3" y="56.3" width="23.2" height="138.7" fill="#10b981" rx="3" class="bar-rect" /><text x="912.9" y="52.3" text-anchor="middle" class="bar-val-lbl">210.2</text></g><text x="886.7" y="232" text-anchor="middle" class="cat-lbl">highlightJavaScript_large</text></svg>
             </div>
 
             <div class="table-responsive">
@@ -401,8 +484,12 @@
                 <span class="badge-count">7 benchmarks</span>
             </div>
 
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-color" style="background: #3b82f6;"></div><span>Pixel 9 Pro XL</span></div><div class="legend-item"><div class="legend-color" style="background: #a855f7;"></div><span>Galaxy S24 Ultra</span></div><div class="legend-item"><div class="legend-color" style="background: #10b981;"></div><span>Pixel 11 Pro</span></div>
+            </div>
+
             <div class="chart-box">
-                <canvas id="chart-3" height="100"></canvas>
+                <svg viewBox="0 0 960 250" class="svg-chart" xmlns="http://www.w3.org/2000/svg"><line x1="65" y1="195.0" x2="935" y2="195.0" class="grid-line" /><text x="57" y="199.0" text-anchor="end" class="axis-lbl">0.0 ms</text><line x1="65" y1="153.8" x2="935" y2="153.8" class="grid-line" /><text x="57" y="157.8" text-anchor="end" class="axis-lbl">0.5 ms</text><line x1="65" y1="112.5" x2="935" y2="112.5" class="grid-line" /><text x="57" y="116.5" text-anchor="end" class="axis-lbl">1.0 ms</text><line x1="65" y1="71.2" x2="935" y2="71.2" class="grid-line" /><text x="57" y="75.2" text-anchor="end" class="axis-lbl">1.5 ms</text><line x1="65" y1="30.0" x2="935" y2="30.0" class="grid-line" /><text x="57" y="34.0" text-anchor="end" class="axis-lbl">2.0 ms</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; loadJsonGrammar: 0.16 ms</title><rect x="85.1" y="181.8" width="26.0" height="13.2" fill="#3b82f6" rx="3" class="bar-rect" /><text x="98.1" y="177.8" text-anchor="middle" class="bar-val-lbl">0.16</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; loadJsonGrammar: 0.08 ms</title><rect x="114.1" y="188.4" width="26.0" height="6.6" fill="#a855f7" rx="3" class="bar-rect" /><text x="127.1" y="184.4" text-anchor="middle" class="bar-val-lbl">0.08</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; loadJsonGrammar: 0.06 ms</title><rect x="143.1" y="190.1" width="26.0" height="5.0" fill="#10b981" rx="3" class="bar-rect" /><text x="156.1" y="186.1" text-anchor="middle" class="bar-val-lbl">0.06</text></g><text x="127.1" y="232" text-anchor="middle" class="cat-lbl">loadJsonGrammar</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; loadKotlinGrammar: 0.23 ms</title><rect x="209.4" y="176.0" width="26.0" height="19.0" fill="#3b82f6" rx="3" class="bar-rect" /><text x="222.4" y="172.0" text-anchor="middle" class="bar-val-lbl">0.23</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; loadKotlinGrammar: 0.18 ms</title><rect x="238.4" y="180.2" width="26.0" height="14.8" fill="#a855f7" rx="3" class="bar-rect" /><text x="251.4" y="176.2" text-anchor="middle" class="bar-val-lbl">0.18</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; loadKotlinGrammar: 0.14 ms</title><rect x="267.4" y="183.4" width="26.0" height="11.6" fill="#10b981" rx="3" class="bar-rect" /><text x="280.4" y="179.4" text-anchor="middle" class="bar-val-lbl">0.14</text></g><text x="251.4" y="232" text-anchor="middle" class="cat-lbl">loadKotlinGrammar</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; loadDarkPlusTheme: 0.56 ms</title><rect x="333.7" y="148.8" width="26.0" height="46.2" fill="#3b82f6" rx="3" class="bar-rect" /><text x="346.7" y="144.8" text-anchor="middle" class="bar-val-lbl">0.56</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; loadDarkPlusTheme: 0.32 ms</title><rect x="362.7" y="168.6" width="26.0" height="26.4" fill="#a855f7" rx="3" class="bar-rect" /><text x="375.7" y="164.6" text-anchor="middle" class="bar-val-lbl">0.32</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; loadDarkPlusTheme: 0.23 ms</title><rect x="391.7" y="176.0" width="26.0" height="19.0" fill="#10b981" rx="3" class="bar-rect" /><text x="404.7" y="172.0" text-anchor="middle" class="bar-val-lbl">0.23</text></g><text x="375.7" y="232" text-anchor="middle" class="cat-lbl">loadDarkPlusTheme</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; loadMonokaiTheme: 0.64 ms</title><rect x="458.0" y="142.2" width="26.0" height="52.8" fill="#3b82f6" rx="3" class="bar-rect" /><text x="471.0" y="138.2" text-anchor="middle" class="bar-val-lbl">0.64</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; loadMonokaiTheme: 0.38 ms</title><rect x="487.0" y="163.7" width="26.0" height="31.4" fill="#a855f7" rx="3" class="bar-rect" /><text x="500.0" y="159.7" text-anchor="middle" class="bar-val-lbl">0.38</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; loadMonokaiTheme: 0.28 ms</title><rect x="516.0" y="171.9" width="26.0" height="23.1" fill="#10b981" rx="3" class="bar-rect" /><text x="529.0" y="167.9" text-anchor="middle" class="bar-val-lbl">0.28</text></g><text x="500.0" y="232" text-anchor="middle" class="cat-lbl">loadMonokaiTheme</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; loadOneDarkProTheme: 1.42 ms</title><rect x="582.3" y="77.9" width="26.0" height="117.1" fill="#3b82f6" rx="3" class="bar-rect" /><text x="595.3" y="73.9" text-anchor="middle" class="bar-val-lbl">1.42</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; loadOneDarkProTheme: 1.15 ms</title><rect x="611.3" y="100.1" width="26.0" height="94.9" fill="#a855f7" rx="3" class="bar-rect" /><text x="624.3" y="96.1" text-anchor="middle" class="bar-val-lbl">1.15</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; loadOneDarkProTheme: 0.92 ms</title><rect x="640.3" y="119.1" width="26.0" height="75.9" fill="#10b981" rx="3" class="bar-rect" /><text x="653.3" y="115.1" text-anchor="middle" class="bar-val-lbl">0.92</text></g><text x="624.3" y="232" text-anchor="middle" class="cat-lbl">loadOneDarkProTheme</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; loadPythonGrammar: 1.53 ms</title><rect x="706.6" y="68.8" width="26.0" height="126.2" fill="#3b82f6" rx="3" class="bar-rect" /><text x="719.6" y="64.8" text-anchor="middle" class="bar-val-lbl">1.53</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; loadPythonGrammar: 1.00 ms</title><rect x="735.6" y="112.5" width="26.0" height="82.5" fill="#a855f7" rx="3" class="bar-rect" /><text x="748.6" y="108.5" text-anchor="middle" class="bar-val-lbl">1.00</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; loadPythonGrammar: 0.95 ms</title><rect x="764.6" y="116.6" width="26.0" height="78.4" fill="#10b981" rx="3" class="bar-rect" /><text x="777.6" y="112.6" text-anchor="middle" class="bar-val-lbl">0.95</text></g><text x="748.6" y="232" text-anchor="middle" class="cat-lbl">loadPythonGrammar</text><g class="bar-group"><title>Pixel 9 Pro XL &amp;bull; loadJavaScriptGrammar: 1.59 ms</title><rect x="830.9" y="63.8" width="26.0" height="131.2" fill="#3b82f6" rx="3" class="bar-rect" /><text x="843.9" y="59.8" text-anchor="middle" class="bar-val-lbl">1.59</text></g><g class="bar-group"><title>Galaxy S24 Ultra &amp;bull; loadJavaScriptGrammar: 1.03 ms</title><rect x="859.9" y="110.0" width="26.0" height="85.0" fill="#a855f7" rx="3" class="bar-rect" /><text x="872.9" y="106.0" text-anchor="middle" class="bar-val-lbl">1.03</text></g><g class="bar-group"><title>Pixel 11 Pro &amp;bull; loadJavaScriptGrammar: 0.84 ms</title><rect x="888.9" y="125.7" width="26.0" height="69.3" fill="#10b981" rx="3" class="bar-rect" /><text x="901.9" y="121.7" text-anchor="middle" class="bar-val-lbl">0.84</text></g><text x="872.9" y="232" text-anchor="middle" class="cat-lbl">loadJavaScriptGrammar</text></svg>
             </div>
 
             <div class="table-responsive">
@@ -428,13 +515,13 @@
     </div>
 
     <script>
-        // Theme Management
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             const icon = document.getElementById('themeIcon');
-            icon.innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;';
+            if (icon) {
+                icon.innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;';
+            }
             localStorage.setItem('benchmark-theme', theme);
-            updateChartTheme(theme);
         }
 
         function toggleTheme() {
@@ -445,98 +532,6 @@
         const savedTheme = localStorage.getItem('benchmark-theme') || 
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         applyTheme(savedTheme);
-
-        // Chart.js Configuration
-        const chartInstances = [];
-        function getChartColors(theme) {
-            const isDark = theme === 'dark';
-            return {
-                grid: isDark ? '#334155' : '#e2e8f0',
-                text: isDark ? '#94a3b8' : '#64748b',
-            };
-        }
-
-        function updateChartTheme(theme) {
-            const colors = getChartColors(theme);
-            chartInstances.forEach(c => {
-                if (c.options.scales.x) {
-                    c.options.scales.x.grid.color = colors.grid;
-                    c.options.scales.x.ticks.color = colors.text;
-                }
-                if (c.options.scales.y) {
-                    c.options.scales.y.grid.color = colors.grid;
-                    c.options.scales.y.ticks.color = colors.text;
-                }
-                c.update();
-            });
-        }
-
-        // Render Cross-Library Chart
-        const crossData = {"labels": ["Compose Highlight", "Shiki", "TextMate"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [10.62, 0.04, 10.56], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [2.1, 0.04, 6.28], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [2.21, 0.03, 4.97], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]};
-        const colors = getChartColors(savedTheme);
-
-        const crossCtx = document.getElementById('crossLibraryChart').getContext('2d');
-        const crossChart = new Chart(crossCtx, {
-            type: 'bar',
-            data: crossData,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top', labels: { color: colors.text } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(ctx) {
-                                return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' ms';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
-                    y: {
-                        grid: { color: colors.grid },
-                        ticks: { color: colors.text },
-                        title: { display: true, text: 'Median Duration (ms)', color: colors.text }
-                    }
-                }
-            }
-        });
-        chartInstances.push(crossChart);
-
-        // Render Section Charts
-        const sectionDataMap = {"Compose Highlight \u2014 WebView JS Bridge": {"labels": ["highlightKotlin_bothThemes", "highlightPython_bothThemes", "highlightJson_bothThemes", "highlightJavaScript_bothThemes", "highlightKotlin_medium_bothThemes", "highlightJavaScript_large_bothThemes", "highlightKotlin_large_bothThemes"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [7.32, 9.62, 10.62, 12.72, 14.33, 0, 40.96], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [1.5, 1.92, 2.1, 2.17, 3.97, 30.64, 0], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [0.72, 0.61, 2.21, 0.82, 1.34, 21.2, 0], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]}, "Shiki \u2014 AnnotatedString Building": {"labels": ["buildAnnotatedString_small_dark", "buildAnnotatedString_small_light", "buildAnnotatedString_large_light", "buildAnnotatedString_large_dark"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [0.04, 0.04, 0.6, 0.61], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [0.04, 0.04, 0.62, 0.62], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [0.04, 0.03, 0.53, 0.54], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]}, "TextMate \u2014 Code Highlighting": {"labels": ["highlightKotlin_lightTheme", "highlightKotlin_small", "highlightJson_small", "highlightKotlin_oneDarkPro", "highlightPython_small", "highlightKotlin_medium", "highlightJavaScript_small", "highlightKotlin_large", "highlightJavaScript_large"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [2.13, 2.18, 2.91, 3.72, 8.36, 10.11, 10.56, 78.79, 0], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [0, 0, 0, 0, 0, 5.41, 6.28, 0, 242.89], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [1.04, 1.02, 1.48, 1.72, 3.67, 5.12, 4.97, 0, 210.15], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]}, "TextMate \u2014 Grammar & Theme Loading": {"labels": ["loadJsonGrammar", "loadKotlinGrammar", "loadDarkPlusTheme", "loadMonokaiTheme", "loadOneDarkProTheme", "loadPythonGrammar", "loadJavaScriptGrammar"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [0.16, 0.23, 0.56, 0.64, 1.42, 1.53, 1.59], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [0.08, 0.18, 0.32, 0.38, 1.15, 1.0, 1.03], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [0.06, 0.14, 0.23, 0.28, 0.92, 0.95, 0.84], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]}};
-        const sectionKeys = Object.keys(sectionDataMap);
-        sectionKeys.forEach((sec, idx) => {
-            const canvas = document.getElementById('chart-' + idx);
-            if (!canvas) return;
-            const secData = sectionDataMap[sec];
-            const chart = new Chart(canvas.getContext('2d'), {
-                type: 'bar',
-                data: secData,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: colors.text } },
-                        tooltip: {
-                            callbacks: {
-                                label: function(ctx) {
-                                    return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' ms';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
-                        y: {
-                            grid: { color: colors.grid },
-                            ticks: { color: colors.text },
-                            title: { display: true, text: 'Median (ms)', color: colors.text }
-                        }
-                    }
-                }
-            });
-            chartInstances.push(chart);
-        });
     </script>
 </body>
 </html>

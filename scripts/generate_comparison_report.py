@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate a comprehensive HTML report comparing benchmark results across all available devices.
+Generate a comprehensive, self-contained HTML report comparing benchmark results across all available devices.
 
 Usage:
     python3 scripts/generate_comparison_report.py [-o output.html]
@@ -8,6 +8,7 @@ Usage:
 import argparse
 import html
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -20,9 +21,9 @@ DEVICE_DISPLAY_NAMES = {
 }
 
 DEVICE_COLORS = {
-    "Pixel 9 Pro XL": {"border": "#4285F4", "bg": "rgba(66, 133, 244, 0.7)"},
-    "Galaxy S24 Ultra": {"border": "#9C27B0", "bg": "rgba(156, 39, 176, 0.7)"},
-    "Pixel 11 Pro": {"border": "#0F9D58", "bg": "rgba(15, 157, 88, 0.7)"},
+    "Pixel 9 Pro XL": {"border": "#3b82f6", "bg": "rgba(59, 130, 246, 0.85)"},
+    "Galaxy S24 Ultra": {"border": "#a855f7", "bg": "rgba(168, 85, 247, 0.85)"},
+    "Pixel 11 Pro": {"border": "#10b981", "bg": "rgba(16, 185, 129, 0.85)"},
 }
 
 
@@ -86,6 +87,13 @@ def parse_markdown_results(file_path: Path) -> dict:
     if display_name.startswith("google ") or display_name.startswith("Google "):
         display_name = display_name.replace("google ", "").replace("Google ", "")
 
+    # Standardize API level display if version name is missing
+    api = device_info.get("API Level", "")
+    if api == "36":
+        device_info["API Level"] = "36 (Android 15)"
+    elif api == "37":
+        device_info["API Level"] = "37 (Android 17)"
+
     return {
         "slug": slug,
         "device_name": display_name,
@@ -94,13 +102,100 @@ def parse_markdown_results(file_path: Path) -> dict:
     }
 
 
+def generate_svg_bar_chart(categories: list[str], device_names: list[str], data_matrix: list[list[float | None]], height: int = 240, width: int = 960) -> str:
+    """Generate self-contained, responsive SVG grouped bar chart with hover states and labels."""
+    all_vals = [v for dev_data in data_matrix for v in dev_data if v is not None and v > 0]
+    if not all_vals:
+        return '<div class="chart-empty">No chart data available</div>'
+
+    max_val = max(all_vals)
+    # Nice scale calculation
+    if max_val <= 0.1:
+        nice_max = 0.1
+    elif max_val <= 1.0:
+        nice_max = math.ceil(max_val * 10) / 10
+    elif max_val <= 10:
+        nice_max = math.ceil(max_val)
+    elif max_val <= 50:
+        nice_max = math.ceil(max_val / 5) * 5
+    elif max_val <= 100:
+        nice_max = math.ceil(max_val / 10) * 10
+    else:
+        nice_max = math.ceil(max_val / 50) * 50
+
+    pad_left = 65
+    pad_right = 25
+    pad_top = 30
+    pad_bottom = 55
+    chart_w = width - pad_left - pad_right
+    chart_h = height - pad_top - pad_bottom
+
+    num_cats = len(categories)
+    num_devs = len(device_names)
+    group_w = chart_w / num_cats
+    bar_w = max(10, min(26, (group_w * 0.72) / num_devs))
+    bar_gap = 3
+
+    svg_parts = []
+    svg_parts.append(f'<svg viewBox="0 0 {width} {height}" class="svg-chart" xmlns="http://www.w3.org/2000/svg">')
+
+    # Horizontal grid lines (4 intervals)
+    for step in range(5):
+        frac = step / 4
+        y_val = nice_max * frac
+        y_pos = pad_top + chart_h - (chart_h * frac)
+        svg_parts.append(f'<line x1="{pad_left}" y1="{y_pos:.1f}" x2="{width - pad_right}" y2="{y_pos:.1f}" class="grid-line" />')
+        if nice_max < 1:
+            lbl = f"{y_val:.2f} ms"
+        elif nice_max < 10:
+            lbl = f"{y_val:.1f} ms"
+        else:
+            lbl = f"{y_val:.0f} ms"
+        svg_parts.append(f'<text x="{pad_left - 8}" y="{y_pos + 4:.1f}" text-anchor="end" class="axis-lbl">{lbl}</text>')
+
+    # Grouped bars
+    for cat_idx, cat in enumerate(categories):
+        group_center = pad_left + (cat_idx + 0.5) * group_w
+        total_bars_w = num_devs * bar_w + (num_devs - 1) * bar_gap
+        group_start_x = group_center - total_bars_w / 2
+
+        for dev_idx, dev_name in enumerate(device_names):
+            val = data_matrix[dev_idx][cat_idx]
+            x_pos = group_start_x + dev_idx * (bar_w + bar_gap)
+            color = DEVICE_COLORS[dev_name]["border"]
+
+            if val is not None and val > 0:
+                bar_h = max(2.0, (val / nice_max) * chart_h)
+                y_pos = pad_top + chart_h - bar_h
+                tooltip = f"{dev_name} &bull; {cat}: {val:.2f} ms"
+
+                svg_parts.append('<g class="bar-group">')
+                svg_parts.append(f'<title>{html.escape(tooltip)}</title>')
+                svg_parts.append(f'<rect x="{x_pos:.1f}" y="{y_pos:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" fill="{color}" rx="3" class="bar-rect" />')
+
+                # Value label above bar
+                txt_y = y_pos - 4
+                val_text = f"{val:.2f}" if val < 10 else f"{val:.1f}"
+                svg_parts.append(f'<text x="{x_pos + bar_w/2:.1f}" y="{txt_y:.1f}" text-anchor="middle" class="bar-val-lbl">{val_text}</text>')
+                svg_parts.append('</g>')
+            else:
+                # Missing test mark
+                svg_parts.append(f'<text x="{x_pos + bar_w/2:.1f}" y="{pad_top + chart_h - 4:.1f}" text-anchor="middle" class="bar-na-lbl">&mdash;</text>')
+
+        # Category label under group
+        disp_cat = cat if len(cat) <= 28 else cat[:26] + "..."
+        svg_parts.append(f'<text x="{group_center:.1f}" y="{height - 18}" text-anchor="middle" class="cat-lbl">{html.escape(disp_cat)}</text>')
+
+    svg_parts.append('</svg>')
+    return "".join(svg_parts)
+
+
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AndroidX Benchmark: Multi-Device Performance Comparison</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <style>
         :root {
             --bg: #f8fafc;
@@ -109,7 +204,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             --text-muted: #64748b;
             --border: #e2e8f0;
             --border-light: #f1f5f9;
-            --th-bg: #f1f5f9;
+            --th-bg: #f8fafc;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
             --toggle-bg: #cbd5e1;
             --toggle-knob: #ffffff;
@@ -118,6 +213,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             --fastest-border: #a7f3d0;
             --callout-bg: #f0f9ff;
             --callout-border: #0284c7;
+            --grid-line: #e2e8f0;
+            --axis-text: #64748b;
         }
         [data-theme="dark"] {
             --bg: #0f172a;
@@ -135,6 +232,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             --fastest-border: #059669;
             --callout-bg: #082f49;
             --callout-border: #38bdf8;
+            --grid-line: #334155;
+            --axis-text: #94a3b8;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -259,16 +358,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .card h2 {
             font-size: 1.35rem;
             font-weight: 700;
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.5rem;
         }
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.25rem;
-        }
-        .section-header h2 {
-            margin-bottom: 0;
+            margin-bottom: 0.75rem;
         }
         .badge-count {
             background: var(--th-bg);
@@ -277,10 +373,72 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             font-weight: 600;
             padding: 0.25rem 0.65rem;
             border-radius: 9999px;
+            border: 1px solid var(--border);
+        }
+        .chart-legend {
+            display: flex;
+            gap: 1.25rem;
+            margin: 1rem 0 0.5rem;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
         }
         .chart-box {
-            margin: 1.5rem 0;
-            position: relative;
+            margin: 1rem 0 1.5rem;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            padding: 0.5rem;
+        }
+        .svg-chart {
+            width: 100%;
+            height: auto;
+            min-height: 200px;
+            display: block;
+        }
+        .grid-line {
+            stroke: var(--grid-line);
+            stroke-width: 1;
+            stroke-dasharray: 3 3;
+        }
+        .axis-lbl {
+            fill: var(--axis-text);
+            font-size: 11px;
+            font-family: inherit;
+        }
+        .cat-lbl {
+            fill: var(--text);
+            font-size: 11px;
+            font-weight: 600;
+            font-family: inherit;
+        }
+        .bar-val-lbl {
+            fill: var(--text-muted);
+            font-size: 10px;
+            font-weight: 600;
+            font-family: inherit;
+        }
+        .bar-na-lbl {
+            fill: var(--text-muted);
+            font-size: 12px;
+            font-weight: 400;
+        }
+        .bar-rect {
+            transition: opacity 0.2s, transform 0.2s;
+            cursor: pointer;
+        }
+        .bar-group:hover .bar-rect {
+            opacity: 0.85;
         }
         .table-responsive {
             overflow-x: auto;
@@ -313,6 +471,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             padding: 0.15rem 0.4rem;
             border-radius: 4px;
             font-size: 0.84rem;
+            border: 1px solid var(--border);
         }
         .fastest-cell {
             background: var(--fastest-bg);
@@ -336,6 +495,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .na {
             color: var(--text-muted);
             font-style: italic;
+        }
+        .footnote {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.65rem;
         }
         .footer {
             text-align: center;
@@ -362,7 +526,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         <!-- Callout -->
         <div class="callout">
-            <strong>Benchmark Overview:</strong> Real-device benchmarks executed with AndroidX Microbenchmark in release mode with R8 minification. Timings represent median execution times over multiple measurement iterations. Green highlights indicate the fastest execution time for each test across devices.
+            <strong>Benchmark Overview:</strong> Real-device benchmarks executed with AndroidX Microbenchmark in release mode with R8 minification. Timings represent median execution times over measurement iterations. Green highlights indicate the fastest device for each test (minimum 2 comparable results, excluding ties). A dash (&mdash;) indicates tests not included in that device's specific benchmark run.
         </div>
 
         <!-- Device Cards -->
@@ -373,11 +537,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <!-- Cross-Library Comparison Card -->
         <div class="card">
             <h2>Cross-Library Comparison (Small Samples)</h2>
-            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.92rem;">
-                Comparing median highlighting execution times across all three libraries on small code samples.
+            <p style="color: var(--text-muted); font-size: 0.92rem;">
+                Comparing median execution times across all three highlighting libraries on small code samples.
             </p>
+            <div class="chart-legend">
+                __LEGEND_HTML__
+            </div>
             <div class="chart-box">
-                <canvas id="crossLibraryChart" height="100"></canvas>
+                __CROSS_CHART_SVG__
             </div>
         </div>
 
@@ -391,13 +558,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
 
     <script>
-        // Theme Management
         function applyTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             const icon = document.getElementById('themeIcon');
-            icon.innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;';
+            if (icon) {
+                icon.innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;';
+            }
             localStorage.setItem('benchmark-theme', theme);
-            updateChartTheme(theme);
         }
 
         function toggleTheme() {
@@ -408,98 +575,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         const savedTheme = localStorage.getItem('benchmark-theme') || 
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         applyTheme(savedTheme);
-
-        // Chart.js Configuration
-        const chartInstances = [];
-        function getChartColors(theme) {
-            const isDark = theme === 'dark';
-            return {
-                grid: isDark ? '#334155' : '#e2e8f0',
-                text: isDark ? '#94a3b8' : '#64748b',
-            };
-        }
-
-        function updateChartTheme(theme) {
-            const colors = getChartColors(theme);
-            chartInstances.forEach(c => {
-                if (c.options.scales.x) {
-                    c.options.scales.x.grid.color = colors.grid;
-                    c.options.scales.x.ticks.color = colors.text;
-                }
-                if (c.options.scales.y) {
-                    c.options.scales.y.grid.color = colors.grid;
-                    c.options.scales.y.ticks.color = colors.text;
-                }
-                c.update();
-            });
-        }
-
-        // Render Cross-Library Chart
-        const crossData = __CROSS_CHART_JSON__;
-        const colors = getChartColors(savedTheme);
-
-        const crossCtx = document.getElementById('crossLibraryChart').getContext('2d');
-        const crossChart = new Chart(crossCtx, {
-            type: 'bar',
-            data: crossData,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top', labels: { color: colors.text } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(ctx) {
-                                return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' ms';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
-                    y: {
-                        grid: { color: colors.grid },
-                        ticks: { color: colors.text },
-                        title: { display: true, text: 'Median Duration (ms)', color: colors.text }
-                    }
-                }
-            }
-        });
-        chartInstances.push(crossChart);
-
-        // Render Section Charts
-        const sectionDataMap = __SECTION_CHARTS_JSON__;
-        const sectionKeys = Object.keys(sectionDataMap);
-        sectionKeys.forEach((sec, idx) => {
-            const canvas = document.getElementById('chart-' + idx);
-            if (!canvas) return;
-            const secData = sectionDataMap[sec];
-            const chart = new Chart(canvas.getContext('2d'), {
-                type: 'bar',
-                data: secData,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: colors.text } },
-                        tooltip: {
-                            callbacks: {
-                                label: function(ctx) {
-                                    return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' ms';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
-                        y: {
-                            grid: { color: colors.grid },
-                            ticks: { color: colors.text },
-                            title: { display: true, text: 'Median (ms)', color: colors.text }
-                        }
-                    }
-                }
-            });
-            chartInstances.push(chart);
-        });
     </script>
 </body>
 </html>
@@ -507,7 +582,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 
 def generate_html(devices: list[dict]) -> str:
-    """Generate modern, responsive HTML report."""
+    """Generate self-contained HTML report with SVG charts."""
+    device_names = [d["device_name"] for d in devices]
+
+    # Legend HTML
+    legend_items = []
+    for dname in device_names:
+        c = DEVICE_COLORS[dname]["border"]
+        legend_items.append(f'<div class="legend-item"><div class="legend-color" style="background: {c};"></div><span>{html.escape(dname)}</span></div>')
+    legend_html = "".join(legend_items)
+
+    # Preferred section order
     preferred_sections = [
         "Compose Highlight — WebView JS Bridge",
         "Shiki — AnnotatedString Building",
@@ -523,84 +608,26 @@ def generate_html(devices: list[dict]) -> str:
             if sec not in all_sections:
                 all_sections.append(sec)
 
-    # Prepare chart datasets for Cross-Library small sample
+    # Cross-Library SVG chart
     cross_library_tests = [
         ("Compose Highlight", "Compose Highlight — WebView JS Bridge", "highlightJson_bothThemes"),
         ("Shiki", "Shiki — AnnotatedString Building", "buildAnnotatedString_small_light"),
         ("TextMate", "TextMate — Code Highlighting", "highlightJavaScript_small"),
     ]
-    cross_chart_labels = [item[0] for item in cross_library_tests]
-    cross_chart_datasets = []
+    cross_categories = [item[0] for item in cross_library_tests]
+    cross_matrix = []
     for dev in devices:
-        color = DEVICE_COLORS.get(dev["device_name"], {"border": "#888", "bg": "rgba(136,136,136,0.7)"})
-        data_points = []
+        dev_vals = []
         for label, sec_name, test_name in cross_library_tests:
             val = None
             if sec_name in dev["sections"] and test_name in dev["sections"][sec_name]:
                 val = dev["sections"][sec_name][test_name]["median_ms"]
-            data_points.append(val if val is not None else 0)
-        cross_chart_datasets.append({
-            "label": dev["device_name"],
-            "data": data_points,
-            "backgroundColor": color["bg"],
-            "borderColor": color["border"],
-            "borderWidth": 2,
-            "borderRadius": 6,
-        })
+            dev_vals.append(val)
+        cross_matrix.append(dev_vals)
 
-    # Prepare Section Comparison Charts
-    section_charts = {}
-    for sec in all_sections:
-        test_set = []
-        for dev in devices:
-            if sec in dev["sections"]:
-                for t in dev["sections"][sec]:
-                    if t not in test_set:
-                        test_set.append(t)
+    cross_chart_svg = generate_svg_bar_chart(cross_categories, device_names, cross_matrix, height=240, width=960)
 
-        def sort_key(t):
-            for dev in devices:
-                if sec in dev["sections"] and t in dev["sections"][sec] and dev["sections"][sec][t]["median_ms"] is not None:
-                    return dev["sections"][sec][t]["median_ms"]
-            return 999999
-        test_set.sort(key=sort_key)
-
-        chart_datasets = []
-        for dev in devices:
-            color = DEVICE_COLORS.get(dev["device_name"], {"border": "#888", "bg": "rgba(136,136,136,0.7)"})
-            points = []
-            for t in test_set:
-                val = None
-                if sec in dev["sections"] and t in dev["sections"][sec]:
-                    val = dev["sections"][sec][t]["median_ms"]
-                points.append(val if val is not None else 0)
-            chart_datasets.append({
-                "label": dev["device_name"],
-                "data": points,
-                "backgroundColor": color["bg"],
-                "borderColor": color["border"],
-                "borderWidth": 2,
-                "borderRadius": 6,
-            })
-        section_charts[sec] = {
-            "labels": [f"`{t}`" for t in test_set],
-            "raw_labels": test_set,
-            "datasets": chart_datasets,
-        }
-
-    cross_chart_json = json.dumps({
-        "labels": cross_chart_labels,
-        "datasets": cross_chart_datasets,
-    })
-
-    section_charts_json = json.dumps({
-        sec: {
-            "labels": section_charts[sec]["raw_labels"],
-            "datasets": section_charts[sec]["datasets"],
-        } for sec in all_sections
-    })
-
-    # Build Device Cards HTML
+    # Device Cards HTML
     device_cards_html = []
     for d in devices:
         info = d["info"]
@@ -619,23 +646,54 @@ def generate_html(devices: list[dict]) -> str:
         </div>
         """)
 
-    # Build Section Tables HTML
+    # Detailed Sections HTML with SVG charts
     sections_html = []
     for sec_idx, sec in enumerate(all_sections):
-        test_data = section_charts[sec]
-        raw_labels = test_data["raw_labels"]
+        # Collect tests in this section
+        test_set = []
+        for dev in devices:
+            if sec in dev["sections"]:
+                for t in dev["sections"][sec]:
+                    if t not in test_set:
+                        test_set.append(t)
 
+        def sort_key(t):
+            for dev in devices:
+                if sec in dev["sections"] and t in dev["sections"][sec] and dev["sections"][sec][t]["median_ms"] is not None:
+                    return dev["sections"][sec][t]["median_ms"]
+            return 999999
+        test_set.sort(key=sort_key)
+
+        # Build data matrix for SVG chart
+        sec_matrix = []
+        for dev in devices:
+            dev_vals = []
+            for t in test_set:
+                val = None
+                if sec in dev["sections"] and t in dev["sections"][sec]:
+                    val = dev["sections"][sec][t]["median_ms"]
+                dev_vals.append(val)
+            sec_matrix.append(dev_vals)
+
+        # SVG Chart for section
+        sec_chart_svg = generate_svg_bar_chart(test_set, device_names, sec_matrix, height=250, width=960)
+
+        # Table rows
         table_rows = []
-        for t in raw_labels:
+        for cat_idx, t in enumerate(test_set):
             row_cells = [f"<td><code>{html.escape(t)}</code></td>"]
 
+            # Collect valid positive times for this test
             times = []
             for dev in devices:
                 if sec in dev["sections"] and t in dev["sections"][sec]:
                     ms = dev["sections"][sec][t]["median_ms"]
                     if ms is not None and ms > 0:
                         times.append(ms)
+
             min_time = min(times) if times else None
+            max_time = max(times) if times else None
+            is_tie = (min_time is not None and max_time is not None and abs(max_time - min_time) < 0.001)
 
             for dev in devices:
                 if sec in dev["sections"] and t in dev["sections"][sec]:
@@ -643,12 +701,13 @@ def generate_html(devices: list[dict]) -> str:
                     ms = item["median_ms"]
                     allocs = item["allocs"]
 
-                    is_fastest = (ms is not None and min_time is not None and abs(ms - min_time) < 1e-6)
-                    badge = '<span class="fastest-badge">Fastest</span>' if (is_fastest and len(times) > 1) else ''
+                    # Only award fastest if not tied across all devices and strictly matches min_time
+                    is_fastest = (ms is not None and min_time is not None and abs(ms - min_time) < 0.001 and not is_tie and len(times) > 1)
+                    badge = '<span class="fastest-badge">Fastest</span>' if is_fastest else ''
 
                     val_str = f"<strong>{ms:.2f} ms</strong> {badge}" if ms is not None else '<span class="na">&mdash;</span>'
                     alloc_str = f'<div class="alloc-sub">{allocs:,} allocs</div>' if allocs is not None else ''
-                    cell_class = ' class="fastest-cell"' if is_fastest and len(times) > 1 else ''
+                    cell_class = ' class="fastest-cell"' if is_fastest else ''
                     row_cells.append(f"<td{cell_class}>{val_str}{alloc_str}</td>")
                 else:
                     row_cells.append('<td><span class="na">&mdash;</span></td>')
@@ -660,11 +719,15 @@ def generate_html(devices: list[dict]) -> str:
         <div class="card section-card" id="section-{sec_idx}">
             <div class="section-header">
                 <h2>{html.escape(sec)}</h2>
-                <span class="badge-count">{len(raw_labels)} benchmarks</span>
+                <span class="badge-count">{len(test_set)} benchmarks</span>
+            </div>
+
+            <div class="chart-legend">
+                {legend_html}
             </div>
 
             <div class="chart-box">
-                <canvas id="chart-{sec_idx}" height="100"></canvas>
+                {sec_chart_svg}
             </div>
 
             <div class="table-responsive">
@@ -685,8 +748,8 @@ def generate_html(devices: list[dict]) -> str:
 
     html_out = HTML_TEMPLATE
     html_out = html_out.replace("__DEVICE_GRID__", "".join(device_cards_html))
-    html_out = html_out.replace("__CROSS_CHART_JSON__", cross_chart_json)
-    html_out = html_out.replace("__SECTION_CHARTS_JSON__", section_charts_json)
+    html_out = html_out.replace("__LEGEND_HTML__", legend_html)
+    html_out = html_out.replace("__CROSS_CHART_SVG__", cross_chart_svg)
     html_out = html_out.replace("__SECTIONS_HTML__", "".join(sections_html))
     return html_out
 
