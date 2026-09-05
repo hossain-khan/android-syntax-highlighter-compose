@@ -36,3 +36,7 @@ google-services.json
 .DS_Store
 gradle/gradle-daemon-jvm.properties
 *.salive
+
+# Python
+__pycache__/
+*.pyc
