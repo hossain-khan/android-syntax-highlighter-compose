@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AndroidX Benchmark: Multi-Device Performance Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --bg-card: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --th-bg: #f1f5f9;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --toggle-bg: #cbd5e1;
+            --toggle-knob: #ffffff;
+            --fastest-bg: #ecfdf5;
+            --fastest-text: #047857;
+            --fastest-border: #a7f3d0;
+            --callout-bg: #f0f9ff;
+            --callout-border: #0284c7;
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --border-light: #1e293b;
+            --th-bg: #1e293b;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+            --toggle-bg: #475569;
+            --toggle-knob: #f8fafc;
+            --fastest-bg: #064e3b;
+            --fastest-text: #6ee7b7;
+            --fastest-border: #059669;
+            --callout-bg: #082f49;
+            --callout-border: #38bdf8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 2.5rem 1.5rem;
+            line-height: 1.5;
+            transition: background 0.25s, color 0.25s;
+        }
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .header-title h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.35rem;
+        }
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+        .theme-toggle {
+            width: 56px;
+            height: 30px;
+            background: var(--toggle-bg);
+            border-radius: 15px;
+            cursor: pointer;
+            border: none;
+            position: relative;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+        .theme-toggle .knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: var(--toggle-knob);
+            border-radius: 50%;
+            transition: transform 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            font-size: 13px;
+        }
+        [data-theme="dark"] .theme-toggle .knob {
+            transform: translateX(26px);
+        }
+        .callout {
+            background: var(--callout-bg);
+            border-left: 4px solid var(--callout-border);
+            padding: 1.15rem 1.35rem;
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .device-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.4rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            border-top: 4px solid var(--card-accent, #3b82f6);
+            position: relative;
+        }
+        .device-badge {
+            position: absolute;
+            top: 1.4rem;
+            right: 1.4rem;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            letter-spacing: 0.05em;
+        }
+        .device-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding-right: 5rem;
+        }
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .specs-table td {
+            padding: 0.45rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .specs-table td:last-child {
+            text-align: right;
+        }
+        .card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 1.6rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .card h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+        .section-header h2 {
+            margin-bottom: 0;
+        }
+        .badge-count {
+            background: var(--th-bg);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+        }
+        .chart-box {
+            margin: 1.5rem 0;
+            position: relative;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+        .benchmark-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+        .benchmark-table th, .benchmark-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .benchmark-table th {
+            background: var(--th-bg);
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .benchmark-table td:nth-child(n+2), .benchmark-table th:nth-child(n+2) {
+            text-align: right;
+        }
+        .benchmark-table code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            background: var(--th-bg);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.84rem;
+        }
+        .fastest-cell {
+            background: var(--fastest-bg);
+        }
+        .fastest-badge {
+            display: inline-block;
+            background: var(--fastest-text);
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            margin-left: 0.4rem;
+            vertical-align: middle;
+        }
+        .alloc-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+        .na {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                <h1>AndroidX Benchmark Multi-Device Comparison</h1>
+                <p>Performance comparison across Pixel 9 Pro XL, Galaxy S24 Ultra, and Pixel 11 Pro</p>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                <div class="knob"><span id="themeIcon">&#9788;</span></div>
+            </button>
+        </div>
+
+        <!-- Callout -->
+        <div class="callout">
+            <strong>Benchmark Overview:</strong> Real-device benchmarks executed with AndroidX Microbenchmark in release mode with R8 minification. Timings represent median execution times over multiple measurement iterations. Green highlights indicate the fastest execution time for each test across devices.
+        </div>
+
+        <!-- Device Cards -->
+        <div class="device-grid">
+            
+        <div class="device-card" style="--card-accent: #4285F4;">
+            <div class="device-badge" style="background: #4285F4;">P9PXL</div>
+            <h3>Pixel 9 Pro XL</h3>
+            <table class="specs-table">
+                <tr><td>API Level</td><td><strong>36</strong></td></tr>
+                <tr><td>CPU Cores</td><td>8 cores</td></tr>
+                <tr><td>CPU Max Freq</td><td>3.10 GHz</td></tr>
+                <tr><td>RAM</td><td>15.2 GB</td></tr>
+            </table>
+        </div>
+        
+        <div class="device-card" style="--card-accent: #9C27B0;">
+            <div class="device-badge" style="background: #9C27B0;">S24ULTRA</div>
+            <h3>Galaxy S24 Ultra</h3>
+            <table class="specs-table">
+                <tr><td>API Level</td><td><strong>36 (Android 15)</strong></td></tr>
+                <tr><td>CPU Cores</td><td>8 cores</td></tr>
+                <tr><td>CPU Max Freq</td><td>N/A</td></tr>
+                <tr><td>RAM</td><td>15.2 GB</td></tr>
+            </table>
+        </div>
+        
+        <div class="device-card" style="--card-accent: #0F9D58;">
+            <div class="device-badge" style="background: #0F9D58;">P11PRO</div>
+            <h3>Pixel 11 Pro</h3>
+            <table class="specs-table">
+                <tr><td>API Level</td><td><strong>37 (Android 17)</strong></td></tr>
+                <tr><td>CPU Cores</td><td>7 cores</td></tr>
+                <tr><td>CPU Max Freq</td><td>4.11 GHz</td></tr>
+                <tr><td>RAM</td><td>11.4 GB</td></tr>
+            </table>
+        </div>
+        
+        </div>
+
+        <!-- Cross-Library Comparison Card -->
+        <div class="card">
+            <h2>Cross-Library Comparison (Small Samples)</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.92rem;">
+                Comparing median highlighting execution times across all three libraries on small code samples.
+            </p>
+            <div class="chart-box">
+                <canvas id="crossLibraryChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Sections -->
+        
+        <div class="card section-card" id="section-0">
+            <div class="section-header">
+                <h2>Compose Highlight — WebView JS Bridge</h2>
+                <span class="badge-count">7 benchmarks</span>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="chart-0" height="100"></canvas>
+            </div>
+
+            <div class="table-responsive">
+                <table class="benchmark-table">
+                    <thead>
+                        <tr>
+                            <th>Benchmark</th>
+                            <th>Pixel 9 Pro XL</th><th>Galaxy S24 Ultra</th><th>Pixel 11 Pro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>highlightKotlin_bothThemes</code></td><td><strong>7.32 ms</strong> </td><td><strong>1.50 ms</strong> <div class="alloc-sub">2,027 allocs</div></td><td class="fastest-cell"><strong>0.72 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,209 allocs</div></td></tr><tr><td><code>highlightPython_bothThemes</code></td><td><strong>9.62 ms</strong> </td><td><strong>1.92 ms</strong> <div class="alloc-sub">2,623 allocs</div></td><td class="fastest-cell"><strong>0.61 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,475 allocs</div></td></tr><tr><td><code>highlightJson_bothThemes</code></td><td><strong>10.62 ms</strong> </td><td class="fastest-cell"><strong>2.10 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">3,918 allocs</div></td><td><strong>2.21 ms</strong> <div class="alloc-sub">2,020 allocs</div></td></tr><tr><td><code>highlightJavaScript_bothThemes</code></td><td><strong>12.72 ms</strong> </td><td><strong>2.17 ms</strong> <div class="alloc-sub">3,235 allocs</div></td><td class="fastest-cell"><strong>0.82 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,859 allocs</div></td></tr><tr><td><code>highlightKotlin_medium_bothThemes</code></td><td><strong>14.33 ms</strong> </td><td><strong>3.97 ms</strong> <div class="alloc-sub">7,178 allocs</div></td><td class="fastest-cell"><strong>1.34 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">3,479 allocs</div></td></tr><tr><td><code>highlightJavaScript_large_bothThemes</code></td><td><span class="na">&mdash;</span></td><td><strong>30.64 ms</strong> <div class="alloc-sub">62,577 allocs</div></td><td class="fastest-cell"><strong>21.20 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">28,482 allocs</div></td></tr><tr><td><code>highlightKotlin_large_bothThemes</code></td><td><strong>40.96 ms</strong> </td><td><span class="na">&mdash;</span></td><td><span class="na">&mdash;</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card section-card" id="section-1">
+            <div class="section-header">
+                <h2>Shiki — AnnotatedString Building</h2>
+                <span class="badge-count">4 benchmarks</span>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="chart-1" height="100"></canvas>
+            </div>
+
+            <div class="table-responsive">
+                <table class="benchmark-table">
+                    <thead>
+                        <tr>
+                            <th>Benchmark</th>
+                            <th>Pixel 9 Pro XL</th><th>Galaxy S24 Ultra</th><th>Pixel 11 Pro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>buildAnnotatedString_small_dark</code></td><td class="fastest-cell"><strong>0.04 ms</strong> <span class="fastest-badge">Fastest</span></td><td class="fastest-cell"><strong>0.04 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,055 allocs</div></td><td class="fastest-cell"><strong>0.04 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,055 allocs</div></td></tr><tr><td><code>buildAnnotatedString_small_light</code></td><td><strong>0.04 ms</strong> </td><td><strong>0.04 ms</strong> <div class="alloc-sub">1,054 allocs</div></td><td class="fastest-cell"><strong>0.03 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,054 allocs</div></td></tr><tr><td><code>buildAnnotatedString_large_light</code></td><td><strong>0.60 ms</strong> </td><td><strong>0.62 ms</strong> <div class="alloc-sub">16,252 allocs</div></td><td class="fastest-cell"><strong>0.53 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">16,253 allocs</div></td></tr><tr><td><code>buildAnnotatedString_large_dark</code></td><td><strong>0.61 ms</strong> </td><td><strong>0.62 ms</strong> <div class="alloc-sub">16,252 allocs</div></td><td class="fastest-cell"><strong>0.54 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">16,252 allocs</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card section-card" id="section-2">
+            <div class="section-header">
+                <h2>TextMate — Code Highlighting</h2>
+                <span class="badge-count">9 benchmarks</span>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="chart-2" height="100"></canvas>
+            </div>
+
+            <div class="table-responsive">
+                <table class="benchmark-table">
+                    <thead>
+                        <tr>
+                            <th>Benchmark</th>
+                            <th>Pixel 9 Pro XL</th><th>Galaxy S24 Ultra</th><th>Pixel 11 Pro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>highlightKotlin_lightTheme</code></td><td><strong>2.13 ms</strong> </td><td><span class="na">&mdash;</span></td><td class="fastest-cell"><strong>1.04 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">12,303 allocs</div></td></tr><tr><td><code>highlightKotlin_small</code></td><td><strong>2.18 ms</strong> </td><td><span class="na">&mdash;</span></td><td class="fastest-cell"><strong>1.02 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">12,303 allocs</div></td></tr><tr><td><code>highlightJson_small</code></td><td><strong>2.91 ms</strong> </td><td><span class="na">&mdash;</span></td><td class="fastest-cell"><strong>1.48 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">8,283 allocs</div></td></tr><tr><td><code>highlightKotlin_oneDarkPro</code></td><td><strong>3.72 ms</strong> </td><td><span class="na">&mdash;</span></td><td class="fastest-cell"><strong>1.72 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">12,321 allocs</div></td></tr><tr><td><code>highlightPython_small</code></td><td><strong>8.36 ms</strong> </td><td><span class="na">&mdash;</span></td><td class="fastest-cell"><strong>3.67 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">34,909 allocs</div></td></tr><tr><td><code>highlightKotlin_medium</code></td><td><strong>10.11 ms</strong> </td><td><strong>5.41 ms</strong> <div class="alloc-sub">61,998 allocs</div></td><td class="fastest-cell"><strong>5.12 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">61,997 allocs</div></td></tr><tr><td><code>highlightJavaScript_small</code></td><td><strong>10.56 ms</strong> </td><td><strong>6.28 ms</strong> <div class="alloc-sub">48,160 allocs</div></td><td class="fastest-cell"><strong>4.97 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">48,160 allocs</div></td></tr><tr><td><code>highlightKotlin_large</code></td><td><strong>78.79 ms</strong> </td><td><span class="na">&mdash;</span></td><td><span class="na">&mdash;</span></td></tr><tr><td><code>highlightJavaScript_large</code></td><td><span class="na">&mdash;</span></td><td><strong>242.89 ms</strong> <div class="alloc-sub">1,524,275 allocs</div></td><td class="fastest-cell"><strong>210.15 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,524,278 allocs</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card section-card" id="section-3">
+            <div class="section-header">
+                <h2>TextMate — Grammar &amp; Theme Loading</h2>
+                <span class="badge-count">7 benchmarks</span>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="chart-3" height="100"></canvas>
+            </div>
+
+            <div class="table-responsive">
+                <table class="benchmark-table">
+                    <thead>
+                        <tr>
+                            <th>Benchmark</th>
+                            <th>Pixel 9 Pro XL</th><th>Galaxy S24 Ultra</th><th>Pixel 11 Pro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>loadJsonGrammar</code></td><td><strong>0.16 ms</strong> </td><td><strong>0.08 ms</strong> <div class="alloc-sub">426 allocs</div></td><td class="fastest-cell"><strong>0.06 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">426 allocs</div></td></tr><tr><td><code>loadKotlinGrammar</code></td><td><strong>0.23 ms</strong> </td><td><strong>0.18 ms</strong> <div class="alloc-sub">1,164 allocs</div></td><td class="fastest-cell"><strong>0.14 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">1,164 allocs</div></td></tr><tr><td><code>loadDarkPlusTheme</code></td><td><strong>0.56 ms</strong> </td><td><strong>0.32 ms</strong> <div class="alloc-sub">5,915 allocs</div></td><td class="fastest-cell"><strong>0.23 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">5,914 allocs</div></td></tr><tr><td><code>loadMonokaiTheme</code></td><td><strong>0.64 ms</strong> </td><td><strong>0.38 ms</strong> <div class="alloc-sub">6,642 allocs</div></td><td class="fastest-cell"><strong>0.28 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">6,641 allocs</div></td></tr><tr><td><code>loadOneDarkProTheme</code></td><td><strong>1.42 ms</strong> </td><td><strong>1.15 ms</strong> <div class="alloc-sub">24,286 allocs</div></td><td class="fastest-cell"><strong>0.92 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">24,286 allocs</div></td></tr><tr><td><code>loadPythonGrammar</code></td><td><strong>1.53 ms</strong> </td><td><strong>1.00 ms</strong> <div class="alloc-sub">8,233 allocs</div></td><td class="fastest-cell"><strong>0.95 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">8,232 allocs</div></td></tr><tr><td><code>loadJavaScriptGrammar</code></td><td><strong>1.59 ms</strong> </td><td><strong>1.03 ms</strong> <div class="alloc-sub">6,974 allocs</div></td><td class="fastest-cell"><strong>0.84 ms</strong> <span class="fastest-badge">Fastest</span><div class="alloc-sub">6,973 allocs</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Generated by <code>scripts/generate_comparison_report.py</code> &bull; Source benchmarks in <code>microbenchmark/results/</code></p>
+        </div>
+    </div>
+
+    <script>
+        // Theme Management
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const icon = document.getElementById('themeIcon');
+            icon.innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;';
+            localStorage.setItem('benchmark-theme', theme);
+            updateChartTheme(theme);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            applyTheme(current === 'light' ? 'dark' : 'light');
+        }
+
+        const savedTheme = localStorage.getItem('benchmark-theme') || 
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        applyTheme(savedTheme);
+
+        // Chart.js Configuration
+        const chartInstances = [];
+        function getChartColors(theme) {
+            const isDark = theme === 'dark';
+            return {
+                grid: isDark ? '#334155' : '#e2e8f0',
+                text: isDark ? '#94a3b8' : '#64748b',
+            };
+        }
+
+        function updateChartTheme(theme) {
+            const colors = getChartColors(theme);
+            chartInstances.forEach(c => {
+                if (c.options.scales.x) {
+                    c.options.scales.x.grid.color = colors.grid;
+                    c.options.scales.x.ticks.color = colors.text;
+                }
+                if (c.options.scales.y) {
+                    c.options.scales.y.grid.color = colors.grid;
+                    c.options.scales.y.ticks.color = colors.text;
+                }
+                c.update();
+            });
+        }
+
+        // Render Cross-Library Chart
+        const crossData = {"labels": ["Compose Highlight", "Shiki", "TextMate"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [10.62, 0.04, 10.56], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [2.1, 0.04, 6.28], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [2.21, 0.03, 4.97], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]};
+        const colors = getChartColors(savedTheme);
+
+        const crossCtx = document.getElementById('crossLibraryChart').getContext('2d');
+        const crossChart = new Chart(crossCtx, {
+            type: 'bar',
+            data: crossData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top', labels: { color: colors.text } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' ms';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
+                    y: {
+                        grid: { color: colors.grid },
+                        ticks: { color: colors.text },
+                        title: { display: true, text: 'Median Duration (ms)', color: colors.text }
+                    }
+                }
+            }
+        });
+        chartInstances.push(crossChart);
+
+        // Render Section Charts
+        const sectionDataMap = {"Compose Highlight \u2014 WebView JS Bridge": {"labels": ["highlightKotlin_bothThemes", "highlightPython_bothThemes", "highlightJson_bothThemes", "highlightJavaScript_bothThemes", "highlightKotlin_medium_bothThemes", "highlightJavaScript_large_bothThemes", "highlightKotlin_large_bothThemes"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [7.32, 9.62, 10.62, 12.72, 14.33, 0, 40.96], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [1.5, 1.92, 2.1, 2.17, 3.97, 30.64, 0], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [0.72, 0.61, 2.21, 0.82, 1.34, 21.2, 0], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]}, "Shiki \u2014 AnnotatedString Building": {"labels": ["buildAnnotatedString_small_dark", "buildAnnotatedString_small_light", "buildAnnotatedString_large_light", "buildAnnotatedString_large_dark"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [0.04, 0.04, 0.6, 0.61], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [0.04, 0.04, 0.62, 0.62], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [0.04, 0.03, 0.53, 0.54], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]}, "TextMate \u2014 Code Highlighting": {"labels": ["highlightKotlin_lightTheme", "highlightKotlin_small", "highlightJson_small", "highlightKotlin_oneDarkPro", "highlightPython_small", "highlightKotlin_medium", "highlightJavaScript_small", "highlightKotlin_large", "highlightJavaScript_large"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [2.13, 2.18, 2.91, 3.72, 8.36, 10.11, 10.56, 78.79, 0], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [0, 0, 0, 0, 0, 5.41, 6.28, 0, 242.89], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [1.04, 1.02, 1.48, 1.72, 3.67, 5.12, 4.97, 0, 210.15], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]}, "TextMate \u2014 Grammar & Theme Loading": {"labels": ["loadJsonGrammar", "loadKotlinGrammar", "loadDarkPlusTheme", "loadMonokaiTheme", "loadOneDarkProTheme", "loadPythonGrammar", "loadJavaScriptGrammar"], "datasets": [{"label": "Pixel 9 Pro XL", "data": [0.16, 0.23, 0.56, 0.64, 1.42, 1.53, 1.59], "backgroundColor": "rgba(66, 133, 244, 0.7)", "borderColor": "#4285F4", "borderWidth": 2, "borderRadius": 6}, {"label": "Galaxy S24 Ultra", "data": [0.08, 0.18, 0.32, 0.38, 1.15, 1.0, 1.03], "backgroundColor": "rgba(156, 39, 176, 0.7)", "borderColor": "#9C27B0", "borderWidth": 2, "borderRadius": 6}, {"label": "Pixel 11 Pro", "data": [0.06, 0.14, 0.23, 0.28, 0.92, 0.95, 0.84], "backgroundColor": "rgba(15, 157, 88, 0.7)", "borderColor": "#0F9D58", "borderWidth": 2, "borderRadius": 6}]}};
+        const sectionKeys = Object.keys(sectionDataMap);
+        sectionKeys.forEach((sec, idx) => {
+            const canvas = document.getElementById('chart-' + idx);
+            if (!canvas) return;
+            const secData = sectionDataMap[sec];
+            const chart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: secData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top', labels: { color: colors.text } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' ms';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: colors.grid }, ticks: { color: colors.text } },
+                        y: {
+                            grid: { color: colors.grid },
+                            ticks: { color: colors.text },
+                            title: { display: true, text: 'Median (ms)', color: colors.text }
+                        }
+                    }
+                }
+            });
+            chartInstances.push(chart);
+        });
+    </script>
+</body>
+</html>

@@ -66,6 +66,7 @@ This will create a report (e.g., `BENCHMARK_RESULTS_S24ULTRA.md`) with:
 ## Benchmark Results
 
 Latest results are stored in:
+- [Interactive Multi-Device Benchmark Comparison](results/benchmark-comparison.html) — HTML report with interactive charts & side-by-side comparison across all devices
 - [BENCHMARK_RESULTS_P9PXL.md](results/BENCHMARK_RESULTS_P9PXL.md) — Pixel 9 Pro XL results
 - [BENCHMARK_RESULTS_P11PRO.md](results/BENCHMARK_RESULTS_P11PRO.md) — Pixel 11 Pro results
 - [BENCHMARK_RESULTS_S24ULTRA.md](results/BENCHMARK_RESULTS_S24ULTRA.md) — Galaxy S24 Ultra results
