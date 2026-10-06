@@ -198,13 +198,13 @@ Card(colors = CardDefaults.cardColors(containerColor = Color.Blue)) {
 All dependency versions are centralized in `gradle/libs.versions.toml`:
 
 **Major Dependencies**:
-- Android Gradle Plugin (AGP): 9.2.1 (supports built-in Kotlin)
-- Kotlin: 2.3.21 (latest stable)
-- KSP: 2.3.7
-- Circuit: 0.33.1
-- Metro: 1.0.0 (latest)
-- Compose BOM: 2026.05.00
-- Gradle: 9.4.1 (minimum required: 9.3.1)
+- Android Gradle Plugin (AGP): 9.4.1 (supports built-in Kotlin)
+- Kotlin: 2.4.20 (latest stable)
+- KSP: 2.3.12
+- Circuit: 0.39.0
+- Metro: 1.4.5
+- Compose BOM: 2026.09.00
+- Gradle: 9.8.0
 
 ## Common Patterns
 

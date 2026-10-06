@@ -104,7 +104,7 @@ enum class ComposeHighlightThemePair(
  * The library ships four levels of API for rendering highlighted code:
  *
  * - **`SyntaxHighlightedCode`** — highest-level drop-in composable. Handles background,
- *   horizontal scroll, padding, line numbers, copy button, language label, and
+ *   horizontal scroll, padding, line numbers, actions slot, header slot, and
  *   [androidx.compose.foundation.text.selection.SelectionContainer] automatically. Best for
  *   static single-theme displays.
  * - **[dev.hossain.highlight.ui.rememberHighlightedCode]** — returns
@@ -130,7 +130,7 @@ enum class ComposeHighlightThemePair(
  *    `SyntaxHighlightedCode` does not expose internal timing data to callers.
  * 3. **Custom layout control** — the screen combines language + theme dropdowns, a scrollable
  *    code block, and the metrics row in a single `Column`. Writing the `Text` directly avoids
- *    suppressing `SyntaxHighlightedCode`'s own copy button and language label.
+ *    suppressing `SyntaxHighlightedCode`'s own actions slot and header chrome.
  */
 @Parcelize
 data object ComposeHighlightScreen : ParcelableScreen {
