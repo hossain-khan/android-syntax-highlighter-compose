@@ -37,10 +37,10 @@ androidxTestRunner = "1.7.0"
 benchmarkJunit4 = "1.5.0"
 
 # https://github.com/hossain-khan/android-compose-highlight
-composeHighlight = "0.39.0"
+composeHighlight = "0.40.0"
 
 # https://github.com/ivan-magda/kotlin-textmate
-kotlinTextmate = "0.2.0"
+kotlinTextmate = "0.3.0"
 
 # https://github.com/hossain-khan/shiki-token-service/blob/main/sdk/README.md
 shikiSdk = "sdk-1.0.5"
